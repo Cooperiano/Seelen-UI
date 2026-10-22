@@ -21,11 +21,12 @@ await Deno.mkdir(GenTypesPath, { recursive: true });
   // yeah cargo test generates the typescript bindings, why? ask to @aleph-alpha/ts-rs xd
   // btw internally we also decided to use tests to avoid having a binary.
   // also this gill generate the json schemas
-  await new Deno.Command("cargo", {
+  const generation = await new Deno.Command("cargo", {
     args: ["test", "--features", "gen-binds"],
     stderr: "inherit",
     stdout: "inherit",
   }).output();
+  if (!generation.success) throw new Error(`Rust binding generation failed (${generation.code})`);
 }
 
 /* {

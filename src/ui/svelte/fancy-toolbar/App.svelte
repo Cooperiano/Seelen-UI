@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Widget } from "@seelen-ui/lib";
+  import { invoke, SeelenCommand, Widget } from "@seelen-ui/lib";
+  import { ZOrder } from "@seelen-ui/lib/types";
   import { onMount } from "svelte";
   import { debounce } from "lodash";
   import Toolbar from "./components/Toolbar.svelte";
@@ -9,6 +10,10 @@
   const startMenuExes = ["SearchHost.exe", "StartMenuExperienceHost.exe"];
 
   const topWindowIsFullscreen = $derived(windowsState.topInteractableWindow?.isFullscreen);
+  const focusedIsDesktop = $derived(
+    ["Progman", "WorkerW"].includes(focused.value?.class ?? "") &&
+      /(?:^|[\\/])explorer\.exe$/i.test(focused.value?.exe ?? ""),
+  );
 
   const focusedIsAppsMenu = $derived(
     startMenuExes.some((program) => (focused.value?.exe || "").endsWith(program)) ||
@@ -17,18 +22,29 @@
       ),
   );
 
-  const showWidget = $derived(!topWindowIsFullscreen || focusedIsAppsMenu);
-  const setWidgetVisibility = debounce((value: boolean) => {
-    if (value) {
-      Widget.self.show();
-    } else {
-      Widget.self.hide();
+  const showWidget = $derived(focusedIsDesktop || !topWindowIsFullscreen || focusedIsAppsMenu);
+  const setWidgetVisibility = debounce(async (value: boolean, desktopHwnd: number | null) => {
+    try {
+      if (value) {
+        await Widget.self.show();
+        // Show Desktop can cover a still-visible overlay. Reassert only this
+        // toolbar's layer; the native transport preserves foreground focus.
+        // Recheck after awaiting so a newer fullscreen focus is never covered.
+        if (desktopHwnd !== null && focusedIsDesktop && focused.value.hwnd === desktopHwnd) {
+          await invoke(SeelenCommand.SetSelfZOrder, { zOrder: ZOrder.TopMost });
+        }
+      } else {
+        await Widget.self.hide();
+      }
+    } catch (error) {
+      console.error("Failed to update toolbar visibility", error);
     }
   }, 100);
 
   $effect(() => {
     if (settingsState.isReady) {
-      setWidgetVisibility(showWidget);
+      // Depend on desktop focus even when showWidget was true before Win+D.
+      setWidgetVisibility(showWidget, focusedIsDesktop ? focused.value.hwnd : null);
     }
   });
 

@@ -1,11 +1,5 @@
-import { RemoteResources } from "./MiniStore.tsx";
-import { NoticeSlider } from "./News.tsx";
+import { DesktopSuite } from "../desktopSuite/index.tsx";
 
 export function Home() {
-  return (
-    <>
-      <NoticeSlider />
-      <RemoteResources />
-    </>
-  );
+  return <DesktopSuite />;
 }

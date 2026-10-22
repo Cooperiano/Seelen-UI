@@ -7,6 +7,7 @@ import { systemState } from "./system.svelte.ts";
 import { settings as _settings } from "./getters.svelte.ts";
 import { dateState } from "libs/ui/svelte/runes/date.svelte.ts";
 import { rootEffectAsync } from "libs/ui/svelte/utils/RootEffect.svelte.ts";
+import { dockReservation } from "../domain/dockReservation.ts";
 
 let isWidgetReady = $state(false);
 const settings = $derived(_settings.value.byWidget["@seelen/weg"]);
@@ -49,19 +50,19 @@ const widgetRect = $derived.by(() => {
   switch (settings.position) {
     case SeelenWegSide.Left:
       hitboxRect.right = hitboxRect.left + size;
-      webviewRect.right = isTouchPrimary.value ? hitboxRect.right : wa.right - Math.round((wa.right - wa.left) / 2);
+      webviewRect.right = isTouchPrimary.value ? hitboxRect.right : wa.right - Math.round((wa.right - wa.left) / 4);
       break;
     case SeelenWegSide.Right:
       hitboxRect.left = hitboxRect.right - size;
-      webviewRect.left = isTouchPrimary.value ? hitboxRect.left : wa.left + Math.round((wa.right - wa.left) / 2);
+      webviewRect.left = isTouchPrimary.value ? hitboxRect.left : wa.left + Math.round((wa.right - wa.left) / 4);
       break;
     case SeelenWegSide.Top:
       hitboxRect.bottom = hitboxRect.top + size;
-      webviewRect.bottom = isTouchPrimary.value ? hitboxRect.bottom : wa.top + Math.round((wa.bottom - wa.top) / 2);
+      webviewRect.bottom = isTouchPrimary.value ? hitboxRect.bottom : wa.top + Math.round((wa.bottom - wa.top) / 4);
       break;
     case SeelenWegSide.Bottom:
       hitboxRect.top = hitboxRect.bottom - size;
-      webviewRect.top = isTouchPrimary.value ? hitboxRect.top : wa.bottom - Math.round((wa.bottom - wa.top) / 2);
+      webviewRect.top = isTouchPrimary.value ? hitboxRect.top : wa.bottom - Math.round((wa.bottom - wa.top) / 4);
       break;
   }
 
@@ -188,7 +189,7 @@ async function updateWidgetPosition() {
 
   if (hideMode === HideMode.Never || isTouch) {
     await invoke(SeelenCommand.RegisterAppBar, {
-      rect: hitboxRect,
+      rect: dockReservation(hitboxRect, position, settings.margin, systemState.currentMonitor.scaleFactor),
       edge: position as any,
     });
   } else {

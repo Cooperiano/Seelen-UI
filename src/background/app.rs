@@ -93,7 +93,10 @@ impl SeelenUI {
         create_background_window()?;
         register_win_hook()?;
 
-        std::thread::spawn(init_clipboard_manager);
+        // The topbar preview has no clipboard-history feature; do not collect it incidentally.
+        if !slu_ipc::identity::SUITE_BUILD {
+            std::thread::spawn(init_clipboard_manager);
+        }
 
         start_discord_rpc()?;
 
@@ -103,7 +106,7 @@ impl SeelenUI {
         let widget_refs: Vec<_> = widgets.iter().map(|w| w.as_ref()).collect();
         let (resolved, _) = resolve_shortcuts(&state.settings, &widget_refs);
 
-        if !crate::cli::shortcuts::SHORTCUTS_PAUSED.load(std::sync::atomic::Ordering::Acquire) {
+        if !slu_ipc::identity::SUITE_BUILD && !crate::cli::shortcuts::SHORTCUTS_PAUSED.load(std::sync::atomic::Ordering::Acquire) {
             ServicePipe::request(SvcAction::SetShortcuts(resolved))?;
         }
 
@@ -111,6 +114,9 @@ impl SeelenUI {
     }
 
     pub fn on_settings_change(state: &AppSettings) -> Result<()> {
+        if slu_ipc::identity::SUITE_BUILD && !state.settings.by_widget.weg.enabled {
+            crate::modules::desktop_suite::taskbar_guard::recover_receipt(true);
+        }
         update_discord_rpc(state.settings.drpc).log_error();
         rust_i18n::set_locale(state.locale());
 
@@ -120,7 +126,7 @@ impl SeelenUI {
         if has_conflicts {
             show_shortcut_conflict_popup().log_error();
         }
-        if !crate::cli::shortcuts::SHORTCUTS_PAUSED.load(std::sync::atomic::Ordering::Acquire) {
+        if !slu_ipc::identity::SUITE_BUILD && !crate::cli::shortcuts::SHORTCUTS_PAUSED.load(std::sync::atomic::Ordering::Acquire) {
             ServicePipe::request(SvcAction::SetShortcuts(resolved))?;
         }
 
@@ -137,6 +143,9 @@ impl SeelenUI {
     }
 
     pub fn is_auto_start_enabled() -> Result<bool> {
+        if slu_ipc::identity::SUITE_BUILD {
+            return crate::modules::desktop_suite::lifecycle::autostart_enabled();
+        }
         Com::run_with_context(|| unsafe {
             let task_service: ITaskService = Com::create_instance(&TaskScheduler)?;
             task_service.Connect(
@@ -146,8 +155,8 @@ impl SeelenUI {
                 &Default::default(),
             )?;
             let is_task_enabled = task_service
-                .GetFolder(&"\\Seelen".into())
-                .and_then(|folder| folder.GetTask(&"Seelen UI Service".into()))
+                .GetFolder(&slu_ipc::identity::TASK_FOLDER.into())
+                .and_then(|folder| folder.GetTask(&slu_ipc::identity::SERVICE_TASK.into()))
                 .and_then(|task| task.Definition())
                 .and_then(|definition| definition.Triggers())
                 .and_then(|triggers| triggers.get_Item(1))
@@ -157,6 +166,9 @@ impl SeelenUI {
     }
 
     pub fn set_auto_start(enabled: bool) -> Result<()> {
+        if slu_ipc::identity::SUITE_BUILD {
+            return crate::modules::desktop_suite::lifecycle::set_autostart(enabled);
+        }
         ServicePipe::request(SvcAction::SetStartup(enabled))
     }
 }

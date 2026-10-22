@@ -15,6 +15,10 @@
     width: 44px;
   }
 
+  &.collapsed .body {
+    padding-inline: var(--spacing-2xs);
+  }
+
   .header {
     height: 100%;
     padding: 0 var(--spacing-xs);
@@ -52,15 +56,14 @@
   .body {
     width: 100%;
     padding: var(--spacing-s) var(--spacing-xs);
-    padding-left: calc(var(--spacing-xs) - 3px);
 
     display: flex;
     flex-direction: column;
     gap: var(--spacing-s);
 
     overflow-x: hidden;
-    overflow-y: scroll;
-    direction: rtl;
+    overflow-y: auto;
+    direction: ltr;
     scrollbar-gutter: stable;
 
     &::-webkit-scrollbar {

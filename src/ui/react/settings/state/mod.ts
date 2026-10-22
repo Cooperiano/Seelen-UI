@@ -1,17 +1,19 @@
 import { invoke, SeelenCommand, SeelenEvent, subscribe } from "@seelen-ui/lib";
 import { batch, computed, effect, signal } from "@preact/signals";
-import { Modal } from "antd";
 import { monitors } from "./system";
 import { cloneDeep } from "lodash";
 import i18n from "../i18n";
+import { rebase } from "./settingsMerge.ts";
 
 export const DEFAULT_SETTINGS = await invoke(SeelenCommand.StateGetDefaultSettings);
 
 export const settings = signal(await invoke(SeelenCommand.StateGetSettings, { path: null }));
 const initialSettings = signal(JSON.stringify(settings.value));
 subscribe(SeelenEvent.StateSettingsChanged, ({ payload }) => {
-  settings.value = payload;
-  initialSettings.value = JSON.stringify(payload);
+  batch(() => {
+    settings.value = rebase(JSON.parse(initialSettings.value), settings.value, payload);
+    initialSettings.value = JSON.stringify(payload);
+  });
 });
 
 export const language = computed(() => settings.value.language);
@@ -22,8 +24,8 @@ export const needRestart = signal(false);
 const bundledAppConfigs = await invoke(SeelenCommand.StateGetSettingsByApp);
 export const appsConfig = computed(() => [...bundledAppConfigs, ...settings.value.byApp]);
 
-export async function saveSettings() {
-  const s = settings.value;
+export async function saveSettings(): Promise<boolean> {
+  const s = structuredClone(settings.value);
 
   const referenced = new Set<string>();
   const wallConfig = s.byWidget["@seelen/wallpaper-manager"];
@@ -41,31 +43,33 @@ export async function saveSettings() {
   };
 
   try {
-    initialSettings.value = JSON.stringify(cleaned);
-    settings.value = cleaned;
     await invoke(SeelenCommand.StateWriteSettings, {
       settings: cleaned,
     });
-  } catch (error) {
-    Modal.error({
-      title: "Error on Save",
-      content: String(error),
-      centered: true,
+    const acknowledged = await invoke(SeelenCommand.StateGetSettings, { path: null });
+    batch(() => {
+      settings.value = rebase(s, settings.value, acknowledged);
+      initialSettings.value = JSON.stringify(acknowledged);
     });
+    return true;
+  } catch {
+    return false;
   }
 }
 
 const defaultMonitorConfig = await invoke(SeelenCommand.StateGetDefaultMonitorSettings);
 effect(() => {
-  const sanitized = settings.peek();
+  const sanitized = structuredClone(settings.peek());
+  const baseline = JSON.parse(initialSettings.peek());
   for (const monitor of monitors.value) {
     if (!sanitized.monitorsV3[monitor.id]) {
       sanitized.monitorsV3[monitor.id] = cloneDeep(defaultMonitorConfig);
+      baseline.monitorsV3[monitor.id] = cloneDeep(defaultMonitorConfig);
     }
   }
   batch(() => {
     settings.value = sanitized;
-    initialSettings.value = JSON.stringify(sanitized);
+    initialSettings.value = JSON.stringify(baseline);
   });
 });
 

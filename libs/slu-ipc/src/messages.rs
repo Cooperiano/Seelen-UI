@@ -50,11 +50,22 @@ pub enum AppMessage {
     OpenUri(String),
     /// System tray change event
     TrayChanged(Win32TrayEvent),
+    /// Taskbar button change event (`ITaskbarList3` calls captured by the hook)
+    TaskbarButtonChanged(Win32TaskbarButtonEvent),
     /// Debug message for logging and diagnostics
     Debug(String),
 }
 
 impl AppMessage {
+    /// Messages sent by the hook DLL from inside explorer.exe, they don't need a meaningful
+    /// response so they are acknowledged before being processed.
+    pub fn is_notification(&self) -> bool {
+        matches!(
+            self,
+            AppMessage::TrayChanged(_) | AppMessage::TaskbarButtonChanged(_) | AppMessage::Debug(_)
+        )
+    }
+
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         Ok(serde_json::from_slice(bytes)?)
     }
@@ -102,21 +113,7 @@ pub enum SvcAction {
     RestoreNativeTaskbar,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SvcMessage {
-    pub token: String,
-    pub action: SvcAction,
-}
-
-impl SvcMessage {
-    pub fn signature() -> &'static str {
-        std::env!("SLU_SERVICE_CONNECTION_TOKEN")
-    }
-
-    pub fn is_signature_valid(&self) -> bool {
-        self.token == SvcMessage::signature()
-    }
-
+impl SvcAction {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         Ok(serde_json::from_slice(bytes)?)
     }
@@ -166,4 +163,22 @@ pub enum Win32TrayEvent {
     IconAdd { data: IconEventData },
     IconUpdate { data: IconEventData },
     IconRemove { data: IconEventData },
+}
+
+// ========== Taskbar Buttons ==========
+
+/// `ITaskbarList3` calls sent by applications to the taskband, captured by the hook
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "type")]
+pub enum Win32TaskbarButtonEvent {
+    /// `SetOverlayIcon` icon part, `icon_handle` is None when the overlay was removed.
+    OverlayIconChanged {
+        hwnd: isize,
+        icon_handle: Option<isize>,
+    },
+    /// `SetOverlayIcon` description part (accessibility text, e.g. "3 unread messages").
+    OverlayDescriptionChanged {
+        hwnd: isize,
+        description: Option<String>,
+    },
 }

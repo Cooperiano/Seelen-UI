@@ -33,12 +33,12 @@ define_app_errors!(
     Tauri(tauri::Error);
     Logger(log::SetLoggerError);
     Lib(seelen_core::SeelenLibError);
-    TauriShell(tauri_plugin_shell::Error);
     Windows(windows::core::Error);
     WMI(wmi::WMIError);
     SerdeJson(serde_json::Error);
     SerdeYaml(serde_yaml::Error);
     SerdeXml(quick_xml::de::DeError);
+    Sqlite(rusqlite::Error);
     Utf8(std::string::FromUtf8Error);
     Utf16(std::string::FromUtf16Error);
     CrossbeamRecv(crossbeam_channel::RecvError);
@@ -57,7 +57,6 @@ define_app_errors!(
     WinHotkey(win_hotkeys::error::WHKError);
     SluIpc(slu_ipc::error::Error);
     Tokio(tokio::task::JoinError);
-    Positioning(positioning::error::Error);
     Time(time::error::Error);
     Bond(crate::modules::system_settings::nightlight::bond::BondError);
 );
@@ -139,8 +138,8 @@ impl From<AppError> for tauri::ipc::InvokeError {
     }
 }
 
-impl From<tauri_plugin_shell::process::Output> for AppError {
-    fn from(output: tauri_plugin_shell::process::Output) -> Self {
+impl From<std::process::Output> for AppError {
+    fn from(output: std::process::Output) -> Self {
         let msg = if !output.stderr.is_empty() {
             let (cow, _used, _has_errors) = encoding_rs::GBK.decode(&output.stderr);
             cow.to_string().to_owned()

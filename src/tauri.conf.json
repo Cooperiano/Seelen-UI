@@ -53,7 +53,8 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "nsis": {
-        "installerIcon": "static/icons/icon.ico",
+        "installerIcon": "static/icons/installer.ico",
+        "uninstallerIcon": "static/icons/uninstaller.ico",
         "sidebarImage": "static/icons/banner.bmp",
         "template": "templates/installer.nsi",
         "installerHooks": "templates/installer-hooks.nsh",
@@ -67,15 +68,20 @@
           "english",
           "french",
           "german",
+          "italian",
           "japanese",
           "korean",
+          "norwegian",
+          "portuguese",
           "portuguesebr",
           "russian",
           "simpchinese",
           "spanish",
           "swedish",
           "tradchinese",
-          "turkish"
+          "turkish",
+          "ukrainian",
+          "vietnamese"
         ]
       }
     },

@@ -1,0 +1,14 @@
+.page {
+  min-width: 0;
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-s);
+}
+
+.trackingSpeed {
+  width: 280px;
+  max-width: 100%;
+  :global(.ant-slider) { flex: 1; min-width: 80px; }
+  :global(.ant-input-number) { width: 75px; }
+}

@@ -1,32 +1,40 @@
 .quick-settings {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--spacing-xs);
+  width: 340px;
+  // This popup sizes its native viewport from root.scrollWidth. Using vw here
+  // would feed that viewport back into its own width and collapse the window.
+  min-width: 340px;
+  max-width: none;
+
+  .quick-settings-heading { font-size: 0.9rem; font-weight: 600; padding: var(--spacing-2xs); }
+  .quick-settings-label { color: var(--slu-std-fg-secondary-color); font-weight: 500; }
+  .quick-settings-percentage { font-variant-numeric: tabular-nums; text-align: right; }
 
   .radio-buttons-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: var(--spacing-xs);
 
     .radio-button {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: var(--spacing-xs);
 
-      padding: 12px 8px;
-      border-radius: 10px;
+      padding: var(--spacing-s) var(--spacing-xs);
+      border-radius: var(--radius-m);
 
       transition: all 0.2s ease;
-      min-height: 80px;
+      min-height: 64px;
 
       .svg-icon {
-        height: 2rem;
+        height: 1.5rem;
       }
 
       .radio-button-label {
-        font-size: 12px;
         font-weight: 500;
         text-align: center;
         line-height: 1.2;
@@ -38,13 +46,13 @@
     display: grid;
     grid-template-columns: 30px 1fr 30px;
     align-items: center;
-    gap: 10px;
+    gap: var(--spacing-xs);
   }
 
   .quick-settings-footer {
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
-    gap: 6px;
+    gap: var(--spacing-2xs);
   }
 }

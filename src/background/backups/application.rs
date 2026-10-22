@@ -93,7 +93,7 @@ pub fn get_backup_status() -> BackupStatus {
 // ─── Public entry points ──────────────────────────────────────────────────────
 
 fn is_backup_sync_enabled() -> bool {
-    FULL_STATE.load().settings.backup_sync_enabled
+    !slu_ipc::identity::SUITE_BUILD && FULL_STATE.load().settings.backup_sync_enabled
 }
 
 /// Fire-and-forget upload triggered after every local settings save.

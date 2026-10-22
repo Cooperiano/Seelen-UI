@@ -1,0 +1,119 @@
+<Window x:Class="MenuBar.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        mc:Ignorable="d"
+        Title="Stats"
+        Height="34"
+        MinHeight="34"
+        MaxHeight="34"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="{StaticResource BarBrush}"
+        FontFamily="{StaticResource UiFont}"
+        Foreground="{StaticResource TextBrush}"
+        SnapsToDevicePixels="True">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="0" CornerRadius="0" GlassFrameThickness="0" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Grid Margin="6,0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="{Binding ActiveApplication}"
+                       MaxWidth="520"
+                       VerticalAlignment="Center"
+                       Foreground="{StaticResource TextBrush}"
+                       FontSize="12"
+                       FontWeight="Medium"
+                       TextTrimming="CharacterEllipsis"
+                       ToolTip="{Binding ActiveWindowTitle}" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <Border Width="1" Height="18" Background="#28FFFFFF" Margin="2,0,5,0" />
+
+            <ItemsControl ItemsSource="{Binding VisibleStats}" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Style="{StaticResource MetricButton}"
+                                ToolTip="{Binding Tooltip}"
+                                AutomationProperties.Name="{Binding Title}"
+                                Click="StatsButton_Click">
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Title}"
+                                           Foreground="{Binding Accent}"
+                                           FontSize="8"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center"
+                                           LineHeight="8" />
+                                <TextBlock Text="{Binding Value}"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center"
+                                           LineHeight="10" />
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Width="1" Height="18" Background="#28FFFFFF" Margin="5,0,2,0"
+                    ToolTip="点击任一 Stats 指标可打开显示设置" />
+
+            <Button Style="{StaticResource StatusButton}"
+                    ToolTip="打开网络设置"
+                    AutomationProperties.Name="网络状态"
+                    Click="NetworkButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE701;" FontSize="13" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding NetworkLabel}" Margin="6,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <Button Style="{StaticResource StatusButton}"
+                    ToolTip="打开声音设置"
+                    AutomationProperties.Name="音量状态"
+                    Click="VolumeButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe Fluent Icons" Text="{Binding VolumeGlyph}" FontSize="13" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding VolumeLabel}" Margin="6,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <Button Style="{StaticResource StatusButton}"
+                    ToolTip="打开电源设置"
+                    AutomationProperties.Name="电池状态"
+                    Click="PowerButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE83F;" FontSize="13" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding PowerLabel}" Margin="6,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <Button Style="{StaticResource StatusButton}"
+                    Padding="10,0"
+                    ToolTip="打开日期和时间设置"
+                    AutomationProperties.Name="日期和时间"
+                    Click="ClockButton_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding DateLabel}" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,7,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding TimeLabel}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

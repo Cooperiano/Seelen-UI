@@ -73,6 +73,7 @@ pub fn start_discord_rpc() -> Result<()> {
 }
 
 pub fn update_discord_rpc(enabled: bool) -> Result<()> {
+    let enabled = enabled && !slu_ipc::identity::SUITE_BUILD;
     DISCORD_ENABLED.store(enabled, Ordering::SeqCst);
 
     if !enabled {

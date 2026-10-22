@@ -23,6 +23,7 @@
   import ItemsGroup from "./ItemsGroup.svelte";
   import CornerAction from "./CornerAction.svelte";
   import Item from "./Item.svelte";
+  import { isDesktopSuite } from "../state/getters.svelte.ts";
 
   // Workaround for https://github.com/clauderic/dnd-kit/issues/2112
   const manager = createDragDropManager();
@@ -203,12 +204,20 @@
     }
     return entry;
   }
+
+  function resolveOverlayPlacement(sourceId: string) {
+    for (const placement of ["left", "center", "right"] as const) {
+      if (groups[placement].some((i) => matchIds(i, sourceId))) return placement;
+    }
+    return "center";
+  }
 </script>
 
 <div
   role="toolbar"
   tabindex="0"
   class="ft-bar {settingsState.position.toLowerCase()}"
+  data-desktop-suite={isDesktopSuite}
   class:ft-bar-hidden={hiddenByAutohide.value}
   data-has-margin={!!settingsState.margin}
   data-there-is-maximized-on-background={windowsState.thereIsMaximizedOnBg}
@@ -223,15 +232,15 @@
     onDragOver={handleDragOver}
     onDragEnd={handleDragEnd}
   >
-    <ItemsGroup id="left" items={groups.left} {itemIndexById} />
-    <ItemsGroup id="center" items={groups.center} {itemIndexById} />
-    <ItemsGroup id="right" items={groups.right} {itemIndexById} />
+    <ItemsGroup placement="left" items={groups.left} {itemIndexById} />
+    <ItemsGroup placement="center" items={groups.center} {itemIndexById} />
+    <ItemsGroup placement="right" items={groups.right} {itemIndexById} />
 
     <DragOverlay>
       {#snippet children(source)}
         {@const module = resolveOverlayModule(source.id as string)}
         {#if module}
-          <Item {module} />
+          <Item {module} placement={resolveOverlayPlacement(source.id as string)} />
         {/if}
       {/snippet}
     </DragOverlay>

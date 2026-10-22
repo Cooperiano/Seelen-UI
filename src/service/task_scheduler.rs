@@ -16,9 +16,9 @@ use crate::{
 
 pub struct TaskSchedulerHelper {}
 
-static GROUP_FOLDER: &str = "\\Seelen";
-static OLD_APP_TASK_NAME: &str = "Seelen-UI";
-static SERVICE_TASK_NAME: &str = "Seelen UI Service";
+static GROUP_FOLDER: &str = slu_ipc::identity::TASK_FOLDER;
+static OLD_APP_TASK_NAME: &str = slu_ipc::identity::LEGACY_TASK;
+static SERVICE_TASK_NAME: &str = slu_ipc::identity::SERVICE_TASK;
 
 impl TaskSchedulerHelper {
     unsafe fn get_task_service() -> Result<ITaskService> {

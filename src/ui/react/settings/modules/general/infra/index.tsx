@@ -56,7 +56,13 @@ export function General() {
       <SettingsGroup>
         <SettingsOption
           label={t("general.startup")}
-          action={<Switch onChange={onAutoStart} value={autostart.value} loading={changingAutostart} />}
+          action={
+            <Switch
+              onChange={onAutoStart}
+              value={autostart.value}
+              loading={changingAutostart}
+            />
+          }
         />
       </SettingsGroup>
 

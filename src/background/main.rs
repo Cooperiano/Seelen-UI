@@ -1,5 +1,5 @@
 // Prevents additional console window on Windows in release
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(any(not(debug_assertions), feature = "desktop-suite"), windows_subsystem = "windows")]
 #![feature(never_type)]
 
 mod app;
@@ -49,6 +49,7 @@ static APP_HANDLE: OnceLock<tauri::AppHandle<tauri::Wry>> = OnceLock::new();
 static TOKIO_RUNTIME_HANDLE: OnceLock<tokio::runtime::Handle> = OnceLock::new();
 
 static SILENT: AtomicBool = AtomicBool::new(false);
+static OPEN_SUITE_SETTINGS: AtomicBool = AtomicBool::new(false);
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 
 pub fn is_local_dev() -> bool {
@@ -63,6 +64,9 @@ pub fn get_tokio_handle() -> &'static tokio::runtime::Handle {
 
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
+    if let Some(code)=crate::modules::desktop_suite::taskbar_guard::early_guard() {
+        return std::process::ExitCode::from(code);
+    }
     if let Err(err) = SeelenLogger::init() {
         let fallback = std::env::temp_dir().join("seelen-ui-logger-error.log");
         let _ = std::fs::write(&fallback, format!("Failed to initialize logger: {err:?}"));
@@ -123,11 +127,19 @@ async fn main() -> std::process::ExitCode {
 }
 
 async fn setup(app_handle: &tauri::AppHandle<tauri::Wry>) -> Result<()> {
+    if slu_ipc::identity::SUITE_BUILD && app_handle.config().identifier != slu_ipc::identity::APP_ID
+    {
+        return Err(
+            "Suite build requires tauri.suite.conf.json; refusing to access the upstream profile"
+                .into(),
+        );
+    }
     print_initial_information();
     create_main_folders()?;
+    crate::modules::desktop_suite::taskbar_guard::recover_receipt(false);
 
     SelfPipe::start_listener()?;
-    if !ServicePipe::is_running() {
+    if !slu_ipc::identity::SUITE_BUILD && !ServicePipe::is_running() {
         ServicePipe::start_service().await?;
     }
 
@@ -159,10 +171,20 @@ async fn setup(app_handle: &tauri::AppHandle<tauri::Wry>) -> Result<()> {
 
     SeelenUI::pre_start().await?;
     SeelenUI::start().await?;
+    if OPEN_SUITE_SETTINGS.load(std::sync::atomic::Ordering::SeqCst) {
+        widgets::show_settings()?;
+    }
+    if slu_ipc::identity::SUITE_BUILD {
+        std::thread::spawn(|| {
+            modules::desktop_suite::lifecycle::SuiteManager::instance().start_enabled().log_error();
+        });
+    }
     warn_if_elevated(app_handle);
-    telemetry::start_telemetry();
-    backups::infrastructure::start_backup_sync();
-    server::http::start_http_server();
+    if !slu_ipc::identity::SUITE_BUILD {
+        telemetry::start_telemetry();
+        backups::infrastructure::start_backup_sync();
+        server::http::start_http_server();
+    }
     Ok(())
 }
 
@@ -190,6 +212,11 @@ fn app_callback(_: &tauri::AppHandle<tauri::Wry>, event: tauri::RunEvent) {
         }
         tauri::RunEvent::ExitRequested { api, code, .. } => match code {
             Some(code) => {
+                if slu_ipc::identity::SUITE_BUILD && !modules::desktop_suite::lifecycle::EXIT_READY.load(std::sync::atomic::Ordering::SeqCst) {
+                    api.prevent_exit();
+                    modules::desktop_suite::lifecycle::request_exit();
+                    return;
+                }
                 // if exit code is 0 it means that the app was closed by the user
                 if code == 0 {
                     ServicePipe::request(SvcAction::Stop).log_error();

@@ -2,6 +2,18 @@
 
 Guidance for AI agents working in this repository.
 
+## This fork
+
+This is Cooperiano's experimental desktop-suite adaptation, not an official
+Seelen release. Read `documentation/SOURCES-AND-CONTRIBUTIONS.md` and
+`documentation/VERIFICATION.md`. Preserve upstream attribution and license.
+Use the `desktop-suite` feature and isolated suite config for this adaptation.
+Never commit settings, runtime logs, dumps, credentials, signing keys or local
+handoffs. Do not re-enable archived upstream publishing workflows as part of
+source iteration. Original Stats/shared sources are under `components/` (AGPL);
+third-party dependencies retain their own terms. Complete modified Touchpad and
+Activity Monitor sources are not bundled; do not claim a complete suite installer.
+
 Seelen UI is a customizable Windows desktop environment built with:
 
 - Rust + Tauri (backend)
@@ -39,6 +51,25 @@ WinRT / COM safety:
 
 - For WinRT objects with event subscriptions, use wrapper structs with `Drop` for automatic unregistration.
 - Windows-rs clones `TypedEventHandler` internally: store tokens, not handlers.
+
+Design (see `documentation/design-system.md` before touching any UI/styles):
+
+- Simple as possible: flat design, standard `data-skin` components, tokens only (`--slu-std-*`, `--color-*`,
+  `--system-accent-*`, `--spacing-*`, `--shadow-*`, `--radius-*`), automatic light/dark via tokens. Nested rounded
+  corners must be concentric (inner radius = outer radius - padding).
+- Accent ALWAYS = the user's Windows accent (`--system-accent-*` / `--slu-std-ui-*`). The color hue scales (red, green,
+  blue…) are only for indicators that convey meaning (error, warning, success, info), never for accent or decoration.
+- Widget visuals live in the default theme (`src/static/themes/default/`), not in components, so users can mod them.
+- No framing `border` (flat): separate with spacing and surface tone; dividers only when needed, 1px in
+  `--slu-std-fg-muted-color`. `outline` is reserved for focus and state indicators (focus ring, active/selected item,
+  drag & drop target, field error), never decoration.
+- Never redesign, add decorative effects, or invent one-off control styles unless the maintainers explicitly ask.
+- Colors are never hardcoded and never derived with ad-hoc alphas (use the `--slu-std-ui-*-overlay` vars). Status hues:
+  error = red, warning = yellow, success = green, info = blue. The font is always the system font (no monospace).
+  De-emphasize text with `--slu-std-fg-*` tokens, never `opacity`. Text on accent backgrounds uses
+  `--slu-std-ui-fg-color`.
+- UX comes first: rules may only be broken for a functional need (legibility, state feedback, affordance), never for
+  looks. Translucency is only allowed on the toolbar, dock (and its preview) and the window manager stack bar.
 
 ## Common Commands
 
@@ -384,6 +415,20 @@ Shared styling for widgets:
 
 - Use `data-skin` attributes for common control styling (buttons, inputs) to avoid class collisions.
 
+## Rust File Layout (Item Order)
+
+Rust files must always declare their items in this order (after the `use` imports):
+
+1. Constants (`const` / `static`)
+2. Main struct, together with the events it emits (event enum + `event_manager!`)
+3. Main struct / events `impl` blocks
+4. Sub structs/enums used by the main struct, top-down (a type goes before the types it uses). Every `impl` goes
+   immediately after its type, and only then the next type: `struct A` > `impl A` > `struct B` > `impl B`.
+5. Utility (free) functions
+6. `#[cfg(test)] mod tests`
+
+Reference: `src/background/modules/notifications/wpn_service.rs`.
+
 ## Rust Types: Tagged Enums (Serde)
 
 Avoid tuple variants for internally tagged enums.
@@ -416,6 +461,8 @@ pub enum Action {
 User/developer-facing docs live under `documentation/`. Always check there before asking how something works:
 
 - `FEATURES.md` — Full feature reference: every widget, setting, shortcut, and system capability
+- `design-system.md` — Design manifesto and contract: flat design, tokens, light/dark, `data-skin` components, rules for
+  widget markup and theme styles
 - `resource-guidelines.md` — Shared concepts: resource IDs, YAML `!include`/`!extend`, i18n, `slu` CLI
 - `widget-guidelines.md` / `widget-js-api.md` — How to build a custom widget: the resource guideline plus the runtime JS
   API (`init`/`ready`, `invoke`/`subscribe`)

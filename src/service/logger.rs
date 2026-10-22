@@ -9,8 +9,10 @@ pub struct SluServiceLogger {}
 
 fn format_now() -> String {
     static FMT: LazyLock<Vec<time::format_description::BorrowedFormatItem>> = LazyLock::new(|| {
-        time::format_description::parse("[[[year]-[month]-[day]][[[hour]:[minute]:[second]]")
-            .expect("valid time format")
+        time::format_description::parse_borrowed::<1>(
+            "[[[year]-[month]-[day]][[[hour]:[minute]:[second]]",
+        )
+        .expect("valid time format")
     });
 
     time::OffsetDateTime::now_local()
@@ -58,8 +60,9 @@ impl SluServiceLogger {
     }
 
     pub fn init() -> Result<()> {
-        let logs_folder =
-            WindowsApi::known_folder(FOLDERID_LocalAppData)?.join("com.seelen.seelen-ui/logs");
+        let logs_folder = WindowsApi::known_folder(FOLDERID_LocalAppData)?
+            .join(slu_ipc::identity::APP_ID)
+            .join("logs");
         std::fs::create_dir_all(&logs_folder)?;
 
         let log_path = logs_folder.join("SLU Service.log");

@@ -1,34 +1,47 @@
-use std::path::PathBuf;
+use std::{os::windows::process::CommandExt, path::PathBuf};
 
 use seelen_core::{handlers::SeelenEvent, state::WegItemData};
-use tauri_plugin_shell::ShellExt;
 
 use crate::{
-    app::{emit_to_webviews, get_app_handle},
+    app::emit_to_webviews,
     error::Result,
     state::application::WEG_ITEMS_MANAGER,
+    widgets::permissions::{WidgetPerm, request_widget_permission},
     windows_api::{WindowsApi, window::Window},
 };
-use windows::Win32::UI::WindowsAndMessaging::{SW_MINIMIZE, WM_CLOSE};
+use windows::Win32::{
+    System::Threading::CREATE_NO_WINDOW,
+    UI::WindowsAndMessaging::{SW_MINIMIZE, WM_CLOSE},
+};
 
 impl crate::tauri_handlers::Handlers {
-    pub fn weg_close_app(hwnd: isize) -> Result<()> {
+    pub async fn get_weg_app_sessions() -> Vec<seelen_core::system_state::UserAppWindow> {
+        if !slu_ipc::identity::SUITE_BUILD { return Vec::new(); }
+        tokio::task::spawn_blocking(crate::modules::desktop_suite::app_sessions::snapshot).await.unwrap_or_default()
+    }
+    pub fn weg_close_app(webview: tauri::WebviewWindow, hwnd: isize) -> Result<()> {
+        request_widget_permission(&webview, WidgetPerm::ManageAppWindows)?;
         let window = Window::from(hwnd);
         WindowsApi::post_message(window.hwnd(), WM_CLOSE, 0, 0)?;
         Ok(())
     }
 
-    pub fn weg_kill_app(hwnd: isize) -> Result<()> {
+    pub fn weg_kill_app(webview: tauri::WebviewWindow, hwnd: isize) -> Result<()> {
+        request_widget_permission(&webview, WidgetPerm::KillProcesses)?;
         let window = Window::from(hwnd);
-        get_app_handle()
-            .shell()
-            .command("taskkill.exe")
+        std::process::Command::new("taskkill.exe")
             .args(["/F", "/PID", &window.process().id().to_string()])
+            .creation_flags(CREATE_NO_WINDOW.0)
             .spawn()?;
         Ok(())
     }
 
-    pub fn weg_toggle_window_state(hwnd: isize, was_focused: bool) -> Result<()> {
+    pub fn weg_toggle_window_state(
+        webview: tauri::WebviewWindow,
+        hwnd: isize,
+        was_focused: bool,
+    ) -> Result<()> {
+        request_widget_permission(&webview, WidgetPerm::ManageAppWindows)?;
         let window = Window::from(hwnd);
         // was_focused is intented to know if the window was focused before click on the dock item
         // on click the items makes the dock being focused.
@@ -41,7 +54,8 @@ impl crate::tauri_handlers::Handlers {
         Ok(())
     }
 
-    pub fn weg_pin_item(path: PathBuf) -> Result<()> {
+    pub fn weg_pin_item(webview: tauri::WebviewWindow, path: PathBuf) -> Result<()> {
+        request_widget_permission(&webview, WidgetPerm::ModifyConfiguration)?;
         if !path.exists() || path.is_dir() {
             return Err("Invalid path".into());
         }
@@ -67,7 +81,8 @@ impl crate::tauri_handlers::Handlers {
         Ok(())
     }
 
-    pub fn weg_import_pinned_taskbar_items() -> Result<usize> {
+    pub fn weg_import_pinned_taskbar_items(webview: tauri::WebviewWindow) -> Result<usize> {
+        request_widget_permission(&webview, WidgetPerm::ModifyConfiguration)?;
         let count = WEG_ITEMS_MANAGER.import_from_windows_taskbar()?;
 
         // Emit event to notify all webviews about the updated items

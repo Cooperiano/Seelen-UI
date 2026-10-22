@@ -1,11 +1,9 @@
-use std::{collections::HashMap, os::windows::process::CommandExt, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf};
 
 use seelen_core::system_state::{RelaunchArguments, StartMenuLayout, StartMenuLayoutItem};
 
 use slu_ipc::{ServiceIpc, messages::SvcAction};
-use tauri::WebviewWindow;
-use tauri_plugin_shell::ShellExt;
-use windows::Win32::System::Threading::{CREATE_NEW_PROCESS_GROUP, CREATE_NO_WINDOW};
+use tauri::{Manager, WebviewWindow};
 
 use crate::{
     app::{SeelenUI, get_app_handle},
@@ -23,21 +21,40 @@ use crate::{
     windows_api::{WindowsApi, string_utils::WindowsString},
 };
 
-pub fn open_file_inner(path: String) -> Result<()> {
-    std::process::Command::new("cmd")
-        .raw_arg("/c")
-        .raw_arg("start")
-        .raw_arg("\"\"")
-        .raw_arg(format!("\"{path}\""))
-        .creation_flags(CREATE_NO_WINDOW.0 | CREATE_NEW_PROCESS_GROUP.0)
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()?;
-    Ok(())
-}
-
 impl crate::tauri_handlers::Handlers {
+    pub fn get_desktop_suite_modules() -> Result<Vec<String>> {
+        let resolver = get_app_handle().path();
+        let desktop = resolver.desktop_dir()?;
+        let local_data = resolver.local_data_dir()?;
+        Ok(utils::desktop_suite::MODULE_IDS
+            .iter()
+            .filter(|id| {
+                  if slu_ipc::identity::SUITE_BUILD && matches!(**id, "stats" | "touchpad") {
+                      return crate::modules::desktop_suite::lifecycle::component_path(id).is_ok_and(|p| p.is_file());
+                  }
+                utils::desktop_suite::module_path(id, &desktop, &local_data)
+                    .is_some_and(|path| path.is_file())
+            })
+            .map(|id| (*id).to_owned())
+            .collect())
+    }
+
+    pub fn open_desktop_suite_module(webview: WebviewWindow, module: String) -> Result<()> {
+        request_widget_permission(&webview, WidgetPerm::Run)?;
+        if slu_ipc::identity::SUITE_BUILD && matches!(module.as_str(), "stats" | "touchpad") {
+            return crate::widgets::show_settings_at(&format!("/{module}"));
+        }
+        let resolver = get_app_handle().path();
+        let path = utils::desktop_suite::module_path(
+            &module,
+            &resolver.desktop_dir()?,
+            &resolver.local_data_dir()?,
+        )
+        .filter(|path| path.is_file())
+        .ok_or("Desktop suite module is not installed")?;
+        WindowsApi::execute(path.to_string_lossy().to_string(), None, None, false)
+    }
+
     pub fn log_from_webview(level: u8, message: String, location: String) {
         let level = match level {
             1 => log::Level::Trace,
@@ -51,14 +68,12 @@ impl crate::tauri_handlers::Handlers {
 
     pub fn open_file(webview: tauri::WebviewWindow, path: String) -> Result<()> {
         request_widget_permission(&webview, WidgetPerm::OpenFile)?;
-        open_file_inner(path)
+        WindowsApi::execute(path, None, None, false)
     }
 
     pub fn select_file_on_explorer(path: PathBuf) -> Result<()> {
         let path = path.to_string_lossy().to_string();
-        get_app_handle()
-            .shell()
-            .command(SEELEN_COMMON.system_dir().join("explorer.exe"))
+        std::process::Command::new(SEELEN_COMMON.system_dir().join("explorer.exe"))
             .args(["/select,", &path])
             .spawn()?;
         Ok(())
@@ -74,6 +89,14 @@ impl crate::tauri_handlers::Handlers {
         request_widget_permission(&webview, WidgetPerm::Run)?;
         let args = args.map(|args| args.to_string());
         WindowsApi::execute(program, args, working_dir, elevated)
+    }
+
+    pub fn app_exit() {
+        get_app_handle().exit(0);
+    }
+
+    pub fn app_restart() {
+        get_app_handle().restart();
     }
 
     pub fn is_dev_mode() -> bool {

@@ -26,7 +26,7 @@
   const filteredLuminance = $derived(
     Math.max(Math.min(luminance * BRIGHTNESS_MULTIPLIER, MAX_LUMINANCE), MIN_LUMINANCE),
   );
-  const textColor = $derived(filteredLuminance < 125 ? "#efefef" : "#222222");
+  const textColor = $derived(filteredLuminance < 125 ? "var(--color-fixed-gray-50)" : "var(--color-fixed-gray-800)");
 
   $effect(() => {
     if (!thumbnailSrc) {
@@ -210,7 +210,7 @@
       }
 
       button {
-        font-size: 8px;
+        font-size: 0.5rem;
 
         :global(.svg-icon) {
           height: 12px;

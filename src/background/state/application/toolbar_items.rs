@@ -63,6 +63,30 @@ impl ToolbarItemsManager {
 }
 
 fn initial_items() -> ToolbarState {
+    if slu_ipc::identity::SUITE_BUILD {
+        return ToolbarState {
+            is_reorder_disabled: true,
+            left: vec![
+                ToolbarItem2::Inline(Box::new(ToolbarItem {
+                    id: "suite-settings".into(),
+                    template: "return Icon({ name: \"RiSettings4Fill\" });".into(),
+                    tooltip: Some("return t(\"context_menu.settings\");".into()),
+                    on_click: Some("trigger(\"@seelen/settings\");".into()),
+                    ..Default::default()
+                })),
+                ToolbarItem2::Plugin("@default/focused-app".into()),
+            ],
+            center: vec![],
+            right: vec![
+                ToolbarItem2::Plugin("@seelen/tb-system-tray".into()),
+                ToolbarItem2::Plugin("@seelen/tb-network-popup".into()),
+                ToolbarItem2::Plugin("@seelen/tb-media-popup".into()),
+                ToolbarItem2::Plugin("@default/power".into()),
+                ToolbarItem2::Plugin("@seelen/tb-quick-settings".into()),
+                ToolbarItem2::Plugin("@seelen/tb-calendar-popup".into()),
+            ],
+        };
+    }
     ToolbarState {
         left: vec![
             ToolbarItem2::Plugin("@seelen/tb-user-menu".into()),

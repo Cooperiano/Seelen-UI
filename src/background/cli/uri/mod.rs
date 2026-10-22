@@ -91,10 +91,12 @@ pub async fn process_uri(uri: &str) -> Result<()> {
         return Err("Invalid URI format".into());
     };
 
-    let env_prefix = if enviroment == "production" {
-        "".to_string()
-    } else {
-        format!(".{enviroment}")
+    // The environment ends up in the hostname, so it must come from a fixed list: any other
+    // value (e.g. `evil.com?`) would redirect the authenticated request to another host.
+    let env_prefix = match enviroment.as_str() {
+        "production" => "",
+        "staging" => ".staging",
+        _ => return Err("Invalid URI environment".into()),
     };
 
     let url = format!("https://product{env_prefix}.seelen.io/resource/download/{resource_id}");
@@ -430,15 +432,20 @@ async fn download_remote_wallpapers(wallpaper: &mut Wallpaper) -> Result<()> {
         wallpaper.filename = Some(filename);
     }
 
-    // Download the thumbnail
+    // Download the thumbnail, it's not essential so failures are only logged
     if let Some(thumbnail_url) = &wallpaper.thumbnail_url {
-        let thumbnail_filename = download_remote_asset(thumbnail_url, &folder_to_store).await?;
-        wallpaper.thumbnail_filename = Some(thumbnail_filename);
+        match download_remote_asset(thumbnail_url, &folder_to_store).await {
+            Ok(thumbnail_filename) => wallpaper.thumbnail_filename = Some(thumbnail_filename),
+            Err(err) => log::error!("Failed to download wallpaper thumbnail: {err}"),
+        }
     }
 
     wallpaper.save().await?;
     Ok(())
 }
+
+const DOWNLOAD_MAX_ATTEMPTS: u32 = 3;
+const DOWNLOAD_RETRY_DELAY: Duration = Duration::from_secs(2);
 
 async fn download_remote_asset(url: &url::Url, folder_to_store: &Path) -> Result<String> {
     if !folder_to_store.is_dir() {
@@ -449,6 +456,27 @@ async fn download_remote_asset(url: &url::Url, folder_to_store: &Path) -> Result
         return Err("Could not determine file extension from URL".into());
     };
 
+    for attempt in 1..DOWNLOAD_MAX_ATTEMPTS {
+        match try_download_asset(url, folder_to_store, extension).await {
+            Ok(filename) => return Ok(filename),
+            Err(err) => {
+                log::warn!(
+                    "Failed to download asset (attempt {attempt}/{DOWNLOAD_MAX_ATTEMPTS}): {err}"
+                );
+                tokio::time::sleep(DOWNLOAD_RETRY_DELAY).await;
+            }
+        }
+    }
+
+    // Last attempt: let the error propagate directly instead of tracking it manually.
+    try_download_asset(url, folder_to_store, extension).await
+}
+
+async fn try_download_asset(
+    url: &url::Url,
+    folder_to_store: &Path,
+    extension: &str,
+) -> Result<String> {
     // Use a long timeout for large assets (videos can be hundreds of MB; the
     // global 15 s client timeout is too short on slow / CDN-throttled connections).
     let res = SessionManager::plain_get(url.as_str())

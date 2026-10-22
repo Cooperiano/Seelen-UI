@@ -47,7 +47,7 @@ impl SeelenCommon {
         let temp_dir = resolver
             .temp_dir()
             .expect("Failed to get temp dir")
-            .join("com.seelen.seelen-ui");
+            .join(slu_ipc::identity::APP_ID);
 
         let system_dir =
             WindowsApi::known_folder(FOLDERID_Windows).expect("Failed to get system dir");

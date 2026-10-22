@@ -42,7 +42,7 @@ fn set_path_value(enviroment: &RegKey, value: String) -> Result<()> {
 
 /// add the installation directory to the PATH environment variable
 pub fn add_installation_dir_to_path() -> Result<()> {
-    if was_installed_using_msix() {
+    if slu_ipc::identity::SUITE_BUILD || was_installed_using_msix() {
         return Ok(());
     }
 
@@ -66,7 +66,7 @@ pub fn add_installation_dir_to_path() -> Result<()> {
 
 /// remove the installation directory from the PATH environment variable
 pub fn remove_installation_dir_from_path() -> Result<()> {
-    if was_installed_using_msix() {
+    if slu_ipc::identity::SUITE_BUILD || was_installed_using_msix() {
         return Ok(());
     }
 

@@ -24,7 +24,7 @@ use windows::{
 };
 
 use crate::hook::HookManager;
-use crate::virtual_desktops::SluWorkspacesManager2;
+use crate::virtual_desktops::VdManager;
 use crate::windows_api::window::event::WinEvent;
 use crate::{
     cli::ServicePipe,
@@ -90,10 +90,12 @@ impl Window {
         Window(WindowsApi::get_foreground_window())
     }
 
+    #[inline]
     pub fn hwnd(&self) -> HWND {
         self.0
     }
 
+    #[inline]
     pub fn address(&self) -> isize {
         self.0.0 as isize
     }
@@ -247,17 +249,8 @@ impl Window {
     }
 
     pub fn workspace_id(&self) -> Result<WorkspaceId> {
-        let win_id = self.address();
-        let monitor_id = self.monitor_id();
-        let workspace_id = SluWorkspacesManager2::instance()
-            .monitors
-            .get(&monitor_id, |monitor| {
-                monitor
-                    .workspaces
-                    .get_by_window_id(win_id)
-                    .map(|w| w.id.clone())
-            })
-            .ok_or("Monitor not found")?
+        let workspace_id = VdManager::instance()
+            .get_workspace_of_window(self.address())
             .ok_or("This window is not binded to a seelen ui workspace")?;
         Ok(workspace_id)
     }
@@ -280,6 +273,16 @@ impl Window {
 
     pub fn is_cloaked(&self) -> bool {
         WindowsApi::is_cloaked(self.0).unwrap_or(false)
+    }
+
+    /// Cloaked by a Seelen buffered animation (transient), not by the app or the shell.
+    pub fn is_cloaked_by_seelen(&self) -> bool {
+        WindowsApi::has_prop(self.0, "SluCloaked")
+    }
+
+    /// Removed from the taskbar via `ITaskbarList::DeleteTab`, which marks the window with this prop.
+    pub fn is_taskbar_tab_deleted(&self) -> bool {
+        WindowsApi::has_prop(self.0, "ITaskList_Deleted")
     }
 
     pub fn is_focused(&self) -> bool {

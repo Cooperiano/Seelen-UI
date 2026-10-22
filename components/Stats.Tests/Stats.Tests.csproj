@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stats\Stats.csproj" />
+    <ProjectReference Include="..\Shared\HardwareTelemetry\HardwareTelemetry.csproj" />
+    <ProjectReference Include="..\Shared\Monitoring.Contracts\Monitoring.Contracts.csproj" />
+  </ItemGroup>
+</Project>

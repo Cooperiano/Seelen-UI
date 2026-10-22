@@ -124,6 +124,21 @@ macro_rules! slu_commands_declaration {
 }
 
 slu_commands_declaration! {
+    IsDesktopSuite = is_desktop_suite() -> bool,
+    GetDesktopSuiteMetrics = get_desktop_suite_metrics() -> Option<serde_json::Value>,
+    GetDesktopSuiteState = @async() @fallible() get_desktop_suite_state() -> serde_json::Value,
+    SetDesktopSuiteTaskbar = @webview() @fallible() set_desktop_suite_taskbar(enabled: bool),
+    DesktopSuiteTaskbarHeartbeat = @webview() @fallible() desktop_suite_taskbar_heartbeat(ready: bool),
+    GetDesktopSuitePreferences = @webview() @async() @fallible() get_desktop_suite_preferences(module: String) -> serde_json::Value,
+    SaveDesktopSuitePreferences = @webview() @async() @fallible() save_desktop_suite_preferences(module: String, revision: String, patch: serde_json::Value) -> serde_json::Value,
+    GetDesktopSuiteTracking = @webview() @async() @fallible() get_desktop_suite_tracking() -> serde_json::Value,
+    SaveDesktopSuiteTracking = @webview() @async() @fallible() save_desktop_suite_tracking(expected: serde_json::Value, desired: serde_json::Value, confirmed: bool) -> serde_json::Value,
+    SetDesktopSuiteComponent = @webview() @async() @fallible() set_desktop_suite_component(module: String, enabled: bool),
+    ExitDesktopSuite = @webview() @async() @fallible() exit_desktop_suite(),
+    GetDesktopSuiteInput = @async() get_desktop_suite_input() -> String,
+    OpenDesktopSuiteMetric = @webview() @fallible() open_desktop_suite_metric(id: u32, rect: Vec<i32>),
+    GetDesktopSuiteModules = @fallible() get_desktop_suite_modules() -> Vec<String>,
+    OpenDesktopSuiteModule = @webview() @fallible() open_desktop_suite_module(module: String),
     // virtual desktops
     StateGetVirtualDesktops = get_virtual_desktops() -> VirtualDesktops,
     SwitchWorkspace =
@@ -142,6 +157,7 @@ slu_commands_declaration! {
         @fallible()
         rename_workspace(workspace_id: WorkspaceId, name: Option<String>),
     MoveWindowToWorkspace =
+        @webview()
         @fallible()
         move_window_to_workspace(hwnd: isize, workspace_id: WorkspaceId),
 
@@ -174,6 +190,8 @@ slu_commands_declaration! {
         run(program: String, args: Option<RelaunchArguments>, working_dir: Option<std::path::PathBuf>, elevated: bool),
     // SimulatePerm = simulate_perm(widget_id: String, perm: String),
 
+    AppExit = app_exit(),
+    AppRestart = app_restart(),
     IsDevMode = is_dev_mode() -> bool,
     IsAppxPackage = is_appx_package() -> bool,
     HasFixedRuntime = has_fixed_runtime() -> bool,
@@ -197,6 +215,7 @@ slu_commands_declaration! {
         umid: Option<String>
     ),
     ShowDesktop =
+        @webview()
         @fallible()
         show_desktop(),
 
@@ -221,6 +240,9 @@ slu_commands_declaration! {
     SetMonitorHdr =
         @fallible()
         set_monitor_hdr(id: MonitorId, state: bool),
+    SetMonitorBrightness =
+        @fallible()
+        set_monitor_brightness(id: MonitorId, brightness: u8),
     SystemGetColors =
         @fallible()
         get_system_colors() -> UIColors,
@@ -275,22 +297,26 @@ slu_commands_declaration! {
         @fallible()
         get_auto_start_status() -> bool,
     RemoveResource =
+        @webview()
         @async()
         @fallible()
         remove_resource(id: ResourceId, kind: ResourceKind),
 
     StateGetWegItems = state_get_weg_items() -> WegItems,
     StateWriteWegItems =
+        @webview()
         @fallible()
         state_write_weg_items(items: WegItems),
     StateGetToolbarItems = state_get_toolbar_items() -> ToolbarState,
     StateWriteToolbarItems =
+        @webview()
         @fallible()
         state_write_toolbar_items(items: ToolbarState),
     StateGetSettings =
         @fallible()
         state_get_settings(path: Option<std::path::PathBuf>) -> Settings,
     StateWriteSettings =
+        @webview()
         @fallible()
         state_write_settings(settings: Settings),
     StateGetSettingsByApp = state_get_settings_by_app() -> Vec<AppConfig> ,
@@ -366,6 +392,7 @@ slu_commands_declaration! {
         @fallible()
         get_native_shell_wallpaper() -> std::path::PathBuf,
     SetNativeShellWallpaper =
+        @webview()
         @fallible()
         set_native_shell_wallpaper(path: std::path::PathBuf),
 
@@ -407,14 +434,6 @@ slu_commands_declaration! {
         @fallible()
         get_media_waveform() -> AudioWaveform,
 
-    // Brightness - Multi-monitor support
-    GetAllMonitorsBrightness =
-        @fallible()
-        get_all_monitors_brightness() -> Vec<MonitorBrightness>,
-    SetMonitorBrightness =
-        @fallible()
-        set_monitor_brightness(instance_name: String, level: u8),
-
     // Power
     GetPowerStatus = get_power_status() -> PowerStatus,
     GetPowerMode = get_power_mode() -> PowerMode,
@@ -422,42 +441,58 @@ slu_commands_declaration! {
     LogOut = log_out(),
     Suspend = suspend(),
     Hibernate = hibernate(),
+    HasPendingOsUpdates = has_pending_os_updates() -> bool,
     Restart =
         @fallible()
-        restart(),
+        restart(
+        #[cfg_attr(all(feature = "gen-binds", not(feature = "salvo")), ts(optional = nullable))]
+        install_updates: Option<bool>
+    ),
     Shutdown =
         @fallible()
-        shutdown(),
+        shutdown(
+        #[cfg_attr(all(feature = "gen-binds", not(feature = "salvo")), ts(optional = nullable))]
+        install_updates: Option<bool>
+    ),
     Lock =
         @fallible()
         lock(),
 
     // SeelenWeg
+    GetWegAppSessions = @async() get_weg_app_sessions() -> Vec<UserAppWindow>,
     WegCloseApp =
+        @webview()
         @fallible()
         weg_close_app(hwnd: isize),
     WegKillApp =
+        @webview()
         @fallible()
         weg_kill_app(hwnd: isize),
     WegToggleWindowState =
+        @webview()
         @fallible()
         weg_toggle_window_state(hwnd: isize, was_focused: bool),
     WegPinItem =
+        @webview()
         @fallible()
         weg_pin_item(path: std::path::PathBuf),
     WegImportPinnedTaskbarItems =
+        @webview()
         @fallible()
         weg_import_pinned_taskbar_items() -> usize,
 
     // Windows Manager
     WmGetRenderTree = wm_get_render_tree() -> TwmGlobalRuntimeTree,
     SetAppWindowsPositions =
+        @webview()
         @fallible()
         set_app_windows_positions(positions: std::collections::HashMap<isize, Rect>),
     RequestFocus =
+        @webview()
         @fallible()
         request_focus(hwnd: isize),
     WmSetStackActiveWindow =
+        @webview()
         @fallible()
         wm_set_stack_active_window(hwnd: isize),
 
@@ -492,7 +527,13 @@ slu_commands_declaration! {
     GetSystemTrayIcons = get_system_tray_icons() -> Vec<SysTrayIcon>,
     SendSystemTrayIconAction =
         @fallible()
-        send_system_tray_icon_action(id: SysTrayIconId, action: SystrayIconAction),
+        send_system_tray_icon_action(id: String, action: SystrayIconAction),
+    SetSystemTrayIconPromoted =
+        @fallible()
+        set_system_tray_icon_promoted(id: String, promoted: bool),
+    SetSystemTrayIconsOrder =
+        @fallible()
+        set_system_tray_icons_order(keys: Vec<String>),
 
     // Notifications
     GetNotifications = get_notifications() -> Vec<AppNotification>,

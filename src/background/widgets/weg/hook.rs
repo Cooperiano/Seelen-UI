@@ -16,6 +16,9 @@ use super::{SeelenWeg, TASKBAR_CLASS};
 impl SeelenWeg {
     // move this to independent function as this should work independently if dock is enabled or not
     pub fn process_raw_win_event(event: u32, origin_hwnd: HWND) -> Result<()> {
+        if !Self::native_shell_takeover_enabled() {
+            return Ok(());
+        }
         let origin = Window::from(origin_hwnd);
         match event {
             EVENT_OBJECT_UNCLOAKED => {

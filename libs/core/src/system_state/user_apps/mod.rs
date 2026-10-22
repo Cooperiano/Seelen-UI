@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use super::Color;
-use crate::{rect::Rect, system_state::MonitorId};
+use crate::{
+    rect::Rect,
+    system_state::{BadgeValue, MonitorId},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(all(feature = "gen-binds", not(feature = "salvo")), derive(ts_rs::TS))]
@@ -56,6 +59,30 @@ pub struct UserAppWindow {
     /// 0 means it has never been focused since tracking started.
     /// clients that want z-order-like sorting should sort descending by this field.
     pub last_foreground_at: i64,
+    /// attention requested by the window via `FlashWindowEx`, cleared when it gets activated.
+    pub attention: WindowAttention,
+    /// overlay icon set on the taskbar button via `ITaskbarList3::SetOverlayIcon`,
+    /// like the unread messages counter of chat apps.
+    pub badge_icon_path: Option<PathBuf>,
+    /// unix timestamp (ms) of the last time the badge was set, 0 if there is no badge.
+    /// on grouped windows the taskbar shows the most recently set badge.
+    pub badge_updated_at: i64,
+    /// badge notification of the app (`BadgeUpdateManager`), by umid, e.g. unread messages count.
+    pub badge_value: Option<BadgeValue>,
+}
+
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(all(feature = "gen-binds", not(feature = "salvo")), derive(ts_rs::TS))]
+#[cfg_attr(all(feature = "gen-binds", not(feature = "salvo")), ts(repr(enum = name)))]
+pub enum WindowAttention {
+    /// the window is not requesting attention
+    #[default]
+    None,
+    /// the window is actively flashing
+    Flashing,
+    /// the window stopped flashing but still waits to be activated, like the
+    /// orange taskbar button left after a flash limited by `uCount`
+    Highlighted,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

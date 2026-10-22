@@ -1,0 +1,42 @@
+name: Suite source verification
+
+on:
+  push:
+    branches: [master, 'suite/**']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: suite-source-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  suite-contracts:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: npm ci
+      - run: npm run suite:test
+      - run: npm run type-check
+      - name: Pure Rust ABI, recovery and preferences checks
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory target/suite-public-tests -Force | Out-Null
+          $cases = @('suite_contract_tests', 'taskbar_guard_policy', 'taskbar_restore_policy', 'taskbar_visibility_policy')
+          foreach ($case in $cases) {
+            rustc --edition 2024 --test "tests/$case.rs" -o "target/suite-public-tests/$case.exe"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & "./target/suite-public-tests/$case.exe"
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          cargo test --locked --manifest-path tests/settings-policy/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run: npm run suite:check

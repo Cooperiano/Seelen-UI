@@ -1,5 +1,4 @@
 import { invoke, SeelenCommand } from "@seelen-ui/lib";
-import { process } from "@seelen-ui/lib/tauri";
 import { Icon } from "libs/ui/react/components/Icon/index.tsx";
 import { Button, Select, Switch, Tooltip } from "antd";
 import { useTranslation } from "react-i18next";
@@ -23,6 +22,8 @@ import { SettingsGroup, SettingsOption, SettingsSubGroup } from "../../component
 import { UpdateChannel } from "@seelen-ui/lib/types";
 import { SessionView } from "./session/infra.tsx";
 import { session } from "../../state/session.ts";
+import { suiteDevelopmentBuild } from "../../state/desktopSuite.ts";
+import { SuiteInformation } from "../desktopSuite/About.tsx";
 
 const [isDevMode, isMsixBuild, isFixed] = await Promise.all([
   invoke(SeelenCommand.IsDevMode),
@@ -38,6 +39,8 @@ export function Information() {
   const backupStatus = $backupStatus.value;
 
   const { t } = useTranslation();
+
+  if (suiteDevelopmentBuild) return <SuiteInformation />;
 
   function onToggleDrpc(value: boolean) {
     setDrpc(value);
@@ -150,13 +153,13 @@ export function Information() {
       <SettingsGroup>
         <SettingsOption>
           <b>{t("extras.relaunch")}</b>
-          <Button type="dashed" onClick={() => process.relaunch()} style={{ width: "50px" }}>
+          <Button type="dashed" onClick={() => invoke(SeelenCommand.AppRestart)} style={{ width: "50px" }}>
             <Icon iconName="IoReload" size={12} />
           </Button>
         </SettingsOption>
         <SettingsOption>
           <b>{t("extras.exit")}</b>
-          <Button type="dashed" danger onClick={() => process.exit(0)} style={{ width: "50px" }}>
+          <Button type="dashed" danger onClick={() => invoke(SeelenCommand.AppExit)} style={{ width: "50px" }}>
             <Icon iconName="IoClose" />
           </Button>
         </SettingsOption>

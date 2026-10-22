@@ -1,4 +1,4 @@
-import { HideMode, SeelenWegMode, SeelenWegSide, WegMiddleClickAction } from "@seelen-ui/lib/types";
+import { HideMode, SeelenWegMode, SeelenWegSide, WegAttentionReveal, WegMiddleClickAction } from "@seelen-ui/lib/types";
 import { Icon } from "libs/ui/react/components/Icon/index.tsx";
 import { $is_touch_primary } from "libs/ui/react/utils/signals";
 import { Button, InputNumber, message, Select, Switch, Tooltip } from "antd";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { OptionsFromEnum } from "../../../shared/utils/app.ts";
 import { getWegConfig, importFromWindowsTaskbar, patchWegConfig } from "./application.ts";
 import { getDevTools } from "../../../developer/application.ts";
+import { suiteDevelopmentBuild } from "../../../../state/desktopSuite.ts";
 
 import { SettingsGroup, SettingsOption, SettingsSubGroup } from "../../../../components/SettingsBox/index.tsx";
 import Compact from "antd/es/space/Compact";
@@ -84,13 +85,17 @@ export const SeelenWegSettings = () => {
         <SettingsSubGroup
           label={
             <SettingsOption>
-              <b>{t("weg.auto_hide")}</b>
+              <b>{t(suiteDevelopmentBuild ? "desktop_suite.taskbar_visibility" : "weg.auto_hide")}</b>
               {/* disabled on touch devices: autohide requires hover/pointer events that touchscreens don't fire */}
               <Tooltip title={isTouchPrimary ? t("weg.auto_hide_touch_disabled") : undefined}>
                 <Select
                   style={{ width: "120px" }}
                   value={settings.hideMode}
-                  options={OptionsFromEnum(t, HideMode, "weg.hide_mode")}
+                  aria-label={t(suiteDevelopmentBuild ? "desktop_suite.taskbar_visibility" : "weg.auto_hide")}
+                  options={suiteDevelopmentBuild ? [
+                    { value: HideMode.Never, label: t("desktop_suite.taskbar_always") },
+                    { value: HideMode.Always, label: t("desktop_suite.taskbar_autohide") },
+                  ] : OptionsFromEnum(t, HideMode, "weg.hide_mode")}
                   onChange={(value) => patchWegConfig({ hideMode: value })}
                   disabled={isTouchPrimary}
                 />
@@ -98,6 +103,7 @@ export const SeelenWegSettings = () => {
             </SettingsOption>
           }
         >
+          {suiteDevelopmentBuild && <SettingsOption description={t("desktop_suite.taskbar_visibility_description")} />}
           <SettingsOption>
             <span>{t("weg.delay_to_show")} (ms)</span>
             <InputNumber
@@ -116,6 +122,16 @@ export const SeelenWegSettings = () => {
               max={10000}
               disabled={settings.hideMode === HideMode.Never || isTouchPrimary}
               onChange={(value) => patchWegConfig({ delayToHide: value || 0 })}
+            />
+          </SettingsOption>
+          <SettingsOption>
+            <span>{t("weg.reveal_on_attention.label")}</span>
+            <Select
+              style={{ width: "160px" }}
+              value={settings.revealOnAttention}
+              options={OptionsFromEnum(t, WegAttentionReveal, "weg.reveal_on_attention")}
+              disabled={settings.hideMode === HideMode.Never || isTouchPrimary}
+              onChange={(value) => patchWegConfig({ revealOnAttention: value })}
             />
           </SettingsOption>
         </SettingsSubGroup>

@@ -1,8 +1,11 @@
+mod badges;
+mod flashing;
 pub mod msix;
 pub mod msix_manifest;
 pub mod previews;
 mod windows;
 
+pub use badges::WindowBadges;
 pub use windows::*;
 
 use std::sync::LazyLock;
@@ -29,9 +32,12 @@ event_manager!(UserAppsManager, UserAppWinEvent);
 
 impl UserAppsManager {
     fn init() -> Self {
-        Self {
+        let manager = Self {
             interactable_windows: SyncVec::from(Self::init_listing_app_windows()),
-        }
+        };
+        Self::init_flash_tracking();
+        Self::init_badge_notifications_tracking();
+        manager
     }
 
     pub fn instance() -> &'static Self {

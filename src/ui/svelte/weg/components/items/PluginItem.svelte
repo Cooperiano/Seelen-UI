@@ -19,7 +19,6 @@
 
   import { settingsState } from "../../state/settings.svelte.ts";
   import {
-    createCanvasSandbox,
     compileSandboxed,
     evalSanboxed,
     getSystemTokens,
@@ -48,16 +47,15 @@
   const scopeResult = $derived(resolveScopes(payload.scopes, { userSourceName }));
   const scope = $derived({
     ...scopeResult.data,
-    position: settingsState.position,
+    position: settingsState.position, // @deprecated remove after v3
+    dock: { position: settingsState.position },
     t: (...args: [string, Record<string, string>]) => $t(...args),
   });
 
-  const sandbox = createCanvasSandbox();
-
-  const renderExec = $derived(compileSandboxed(sandbox, payload.render));
-  const tooltipExec = $derived(compileSandboxed(sandbox, payload.tooltip));
-  const badgeExec = $derived(compileSandboxed(sandbox, payload.badge));
-  const onClickExec = $derived(compileSandboxed(sandbox, payload.onClick));
+  const renderExec = $derived(compileSandboxed(payload.render));
+  const tooltipExec = $derived(compileSandboxed(payload.tooltip));
+  const badgeExec = $derived(compileSandboxed(payload.badge));
+  const onClickExec = $derived(compileSandboxed(payload.onClick));
 
   const tooltipText = $derived(evalToStr(evalSanboxed(tooltipExec, scope)));
   const badgeText = $derived(evalToStr(evalSanboxed(badgeExec, scope)));
@@ -162,7 +160,7 @@
     </div>
 
     {#if badgeText}
-      <div class="weg-item-custom-badge">{badgeText}</div>
+      <div class="weg-item-badge">{badgeText}</div>
     {/if}
   </div>
 {/if}

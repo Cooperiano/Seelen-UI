@@ -3,6 +3,7 @@ import type { UserAppWindowColors } from "@seelen-ui/lib/types";
 import { lazyRune } from "libs/ui/svelte/utils";
 
 export const currentMonitorId = Widget.getCurrent().decoded.monitorId!;
+export const isDesktopSuite = await invoke(SeelenCommand.IsDesktopSuite);
 
 export const virtualDesktop = lazyRune(async () => {
   const initialDesktops = await invoke(SeelenCommand.StateGetVirtualDesktops);

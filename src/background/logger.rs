@@ -9,8 +9,10 @@ pub struct SeelenLogger {}
 
 fn format_now() -> String {
     static FMT: LazyLock<Vec<time::format_description::BorrowedFormatItem>> = LazyLock::new(|| {
-        time::format_description::parse("[[[year]-[month]-[day]][[[hour]:[minute]:[second]]")
-            .expect("valid time format")
+        time::format_description::parse_borrowed::<1>(
+            "[[[year]-[month]-[day]][[[hour]:[minute]:[second]]",
+        )
+        .expect("valid time format")
     });
 
     time::OffsetDateTime::now_local()
@@ -23,8 +25,9 @@ impl SeelenLogger {
     const MAX_LOG_SIZE: u64 = 5 * 1024 * 1024; // 5MB
 
     pub fn init() -> Result<()> {
-        let logs_folder =
-            WindowsApi::known_folder(FOLDERID_LocalAppData)?.join("com.seelen.seelen-ui/logs");
+        let logs_folder = WindowsApi::known_folder(FOLDERID_LocalAppData)?
+            .join(slu_ipc::identity::APP_ID)
+            .join("logs");
         std::fs::create_dir_all(&logs_folder)?;
 
         let log_path = logs_folder.join("Seelen UI.log");

@@ -5,9 +5,6 @@ metadata:
 icon: IoIosArrowDropdown
 target: "@seelen/fancy-toolbar"
 plugin:
-  tooltip: |-
-    return "System Tray";
-  template: |-
-    return Icon({ name: "IoIosArrowDropdown" });
-  onClickV2: |-
-    trigger("@seelen/system-tray");
+  scopes:
+    - Tray
+  template: !include toolbar-plugin.js

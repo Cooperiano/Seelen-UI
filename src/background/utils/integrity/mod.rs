@@ -65,6 +65,11 @@ pub fn print_initial_information() {
 }
 
 pub fn restart_as_appx() -> Result<!> {
+    if slu_ipc::identity::SUITE_BUILD {
+        return Err(
+            "Suite MSIX activation identity is not configured; refusing upstream activation".into(),
+        );
+    }
     WindowsApi::execute(
         r"shell:AppsFolder\Seelen.SeelenUI_p6yyn03m1894e!App".to_string(),
         None,
@@ -99,7 +104,7 @@ pub fn warn_if_elevated(app: &tauri::AppHandle) {
 pub fn is_already_running() -> bool {
     unsafe {
         let session_id = WindowsApi::current_session_id();
-        let mutex_name = format!("Local\\Seelen-UI-Instance-{}", session_id);
+        let mutex_name = format!("Local\\{}-{}", slu_ipc::identity::APP_MUTEX, session_id);
         let mutex_name_wide = WindowsString::from_str(&mutex_name);
 
         // Try to create a named mutex specific to the current session

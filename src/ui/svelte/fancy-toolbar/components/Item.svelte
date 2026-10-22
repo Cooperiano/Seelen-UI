@@ -1,25 +1,17 @@
 <script lang="ts">
-  import { invoke, SeelenCommand, Widget } from "@seelen-ui/lib";
-  import {
-    Alignment,
-    FancyToolbarSide,
-    type ContextMenu,
-    type ToolbarItem,
-    type WidgetId,
-  } from "@seelen-ui/lib/types";
+  import { invoke, SeelenCommand } from "@seelen-ui/lib";
+  import { Alignment, FancyToolbarSide, type ToolbarItem, type WidgetId } from "@seelen-ui/lib/types";
   import type { createSortable } from "@dnd-kit/svelte/sortable";
   import { t } from "../i18n/index.ts";
-  import { evalActionSanboxed, triggerWidget } from "../actionEvaluator.ts";
-  import { evalComponentSandboxed } from "../evaluatedComponents.ts";
-  import { toolbarActions } from "../state/items.svelte.ts";
+  import { evalActionSanboxed } from "./Evaluated/actionEvaluator.ts";
+  import { getMenuForItem } from "../itemMenu.ts";
   import { settingsState } from "../state/settings.svelte.ts";
+  import { isDesktopSuite } from "../state/getters.svelte.ts";
   import { styleToString } from "../utils.ts";
-  import EvaluatedComponents from "../EvaluatedComponents.svelte";
   import { createRemoteDataResolver } from "../remoteData.svelte.ts";
   import { resolveScopes } from "libs/ui/svelte/utils/scopes.svelte.ts";
   import {
     compileSandboxed,
-    createCanvasSandbox,
     evalSanboxed,
     evalToStr,
     getSystemTokens,
@@ -27,40 +19,19 @@
   } from "libs/ui/svelte/utils/sandbox.ts";
   import { prefersDarkColorScheme } from "libs/ui/svelte/runes/DarkMode.svelte.ts";
   import { CssHandled } from "libs/ui/svelte/utils/animations.ts";
+  import { evalComponentSandboxed } from "./Evaluated/definitions.ts";
+  import UnknownEvaluatedComponent from "./Evaluated/Unknown.svelte";
 
   interface Props {
     module: ToolbarItem;
     sortable?: ReturnType<typeof createSortable> | null;
     pluginId?: string;
+    placement: string;
   }
 
-  let { module: self, sortable = null, pluginId }: Props = $props();
+  let { module: self, sortable = null, pluginId, placement }: Props = $props();
 
   const noopAttach = () => {};
-
-  // ── Context menu listener ────────────────────────────────────────────────
-
-  const menuIdentifier = crypto.randomUUID();
-  const callbackEvent = $derived(`context-menu::${self.id.replace("@", "")}`);
-
-  $effect(() => {
-    let unlistenContextMenu: (() => void) | undefined;
-
-    Widget.self.webview
-      .listen(callbackEvent, ({ payload }) => {
-        const { key } = payload as any;
-        if (key === "remove") {
-          toolbarActions.removeItem(self.id);
-        }
-      })
-      .then((fn) => {
-        unlistenContextMenu = fn;
-      });
-
-    return () => {
-      unlistenContextMenu?.();
-    };
-  });
 
   // ── Scope computation ────────────────────────────────────────────────────
 
@@ -77,23 +48,24 @@
   const scope = $derived.by(() => ({
     ..._scopeResult.data,
     ...fetchedData,
-    position: settingsState.position,
+    self: { placement, desktopSuite: isDesktopSuite },
+    position: settingsState.position, // @deprecated remove after v3
+    toolbar: { position: settingsState.position },
     t: (...args: [string, Record<string, string>]) => $t(...args),
   }));
 
   // ── Sandboxed code evaluation ────────────────────────────────────────────
 
-  const sandbox = createCanvasSandbox();
   let canvas = $state<HTMLCanvasElement | null>(null);
 
-  const contentExec = $derived(compileSandboxed(sandbox, self.template));
-  const renderExec = $derived(compileSandboxed(sandbox, self.render));
-  const tooltipExec = $derived(compileSandboxed(sandbox, self.tooltip));
-  const badgeExec = $derived(compileSandboxed(sandbox, self.badge));
+  const contentExec = $derived(compileSandboxed(self.template));
+  const renderExec = $derived(compileSandboxed(self.render));
+  const tooltipExec = $derived(compileSandboxed(self.tooltip));
+  const badgeExec = $derived(compileSandboxed(self.badge));
 
-  const onClickExec = $derived(compileSandboxed(sandbox, self.onClick));
-  const onWheelUpExec = $derived(compileSandboxed(sandbox, self.onWheelUp));
-  const onWheelDownExec = $derived(compileSandboxed(sandbox, self.onWheelDown));
+  const onClickExec = $derived(compileSandboxed(self.onClick));
+  const onWheelUpExec = $derived(compileSandboxed(self.onWheelUp));
+  const onWheelDownExec = $derived(compileSandboxed(self.onWheelDown));
 
   const content = $derived(self.render ? null : evalComponentSandboxed(contentExec, scope));
   const tooltip = $derived(evalToStr(evalComponentSandboxed(tooltipExec, scope)));
@@ -105,15 +77,6 @@
 
   // ── Others derives ───────────────────────────────────────────────────────
 
-  const tooltipY = $derived(
-    settingsState.position === FancyToolbarSide.Bottom
-      ? settingsState.widgetRect.top
-      : settingsState.widgetRect.bottom,
-  );
-  const alignY = $derived(
-    settingsState.position === FancyToolbarSide.Bottom ? Alignment.End : Alignment.Start,
-  );
-
   const itemStyle = $derived(
     styleToString({
       ...self.style,
@@ -124,37 +87,19 @@
   // ── Event handlers ───────────────────────────────────────────────────────
 
   function handleClick() {
-    evalActionSanboxed(onClickExec, {
-      ...scope,
-      trigger: (widgetId: WidgetId) => triggerWidget(widgetId, self.id),
-    });
+    evalActionSanboxed(self.id, onClickExec, scope);
   }
 
   function handleContextMenu(e: MouseEvent) {
     e.stopPropagation();
-    const menu: ContextMenu = {
-      identifier: menuIdentifier,
-      items: [
-        {
-          type: "Item",
-          key: "remove",
-          label: $t("context_menu.remove"),
-          icon: "CgExtensionRemove",
-          callbackEvent,
-        },
-      ],
-    };
     invoke(SeelenCommand.TriggerContextMenu, {
-      menu: { ...menu, alignX: Alignment.Center, alignY: alignY },
+      menu: { ...getMenuForItem($t, self.id), alignX: Alignment.Center, alignY: settingsState.popupAlignY },
       forwardTo: null,
     });
   }
 
   function handleWheel(e: WheelEvent) {
-    evalActionSanboxed(e.deltaY < 0 ? onWheelUpExec : onWheelDownExec, {
-      ...scope,
-      trigger: (widgetId: WidgetId) => triggerWidget(widgetId, self.id),
-    });
+    evalActionSanboxed(self.id, e.deltaY < 0 ? onWheelUpExec : onWheelDownExec, scope);
   }
 
   $effect(() => {
@@ -191,8 +136,8 @@
       data-dragging={sortable?.isDragging}
       data-tooltip={tooltip}
       data-tooltip-align-x="Center"
-      data-tooltip-align-y={alignY}
-      data-tooltip-origin-y={tooltipY}
+      data-tooltip-align-y={settingsState.popupAlignY}
+      data-tooltip-origin-y={settingsState.tooltipY}
       style={itemStyle}
       class="ft-bar-item"
       class:ft-bar-item-clickable={!!self.onClick}
@@ -210,7 +155,7 @@
         {#if self.render}
           <canvas bind:this={canvas} class="ft-bar-item-canvas" style:width={canvasWidth}></canvas>
         {:else}
-          <EvaluatedComponents {content} />
+          <UnknownEvaluatedComponent parentId={self.id} {content} />
         {/if}
       </div>
 

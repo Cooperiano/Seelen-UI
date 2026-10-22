@@ -1,0 +1,26 @@
+namespace MenuBar.Models;
+
+public sealed record SystemSnapshot(
+    bool IsNetworkAvailable,
+    int? VolumePercent,
+    bool IsMuted,
+    int? BatteryPercent,
+    bool IsCharging,
+    double? CpuPercent,
+    double? GpuPercent,
+    double? MemoryPercent,
+    double? PowerWatts,
+    double? SensorPowerWatts,
+    double? CpuTemperatureCelsius,
+    double? CpuFrequencyMhz,
+    double? GpuTemperatureCelsius,
+    double? GpuPowerWatts,
+    double? GpuMemoryUsedMb,
+    double? GpuMemoryTotalMb,
+    double? DiskUsedPercent,
+    double? NetworkDownloadBytesPerSecond,
+    double? NetworkUploadBytesPerSecond,
+    double? BluetoothConnectedDeviceCount,
+    DateTimeOffset Now,
+    string ActiveApplication,
+    string ActiveWindowTitle);

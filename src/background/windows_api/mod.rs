@@ -80,40 +80,47 @@ use windows::{
             FileSystem::WIN32_FIND_DATAW,
         },
         System::{
-            Com::{IPersistFile, STGM_READ},
+            Com::{IDispatch, IPersistFile, IServiceProvider, STGM_READ},
             Environment::ExpandEnvironmentStringsW,
             LibraryLoader::GetModuleHandleW,
             Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS, SetSuspendState},
             RemoteDesktop::ProcessIdToSessionId,
-            Shutdown::{EXIT_WINDOWS_FLAGS, ExitWindowsEx, LockWorkStation, SHUTDOWN_REASON},
+            Shutdown::{
+                EXIT_WINDOWS_FLAGS, ExitWindowsEx, InitiateShutdownW, LockWorkStation,
+                SHUTDOWN_FLAGS, SHUTDOWN_REASON,
+            },
             SystemInformation::{COMPUTER_NAME_FORMAT, GetComputerNameExW},
             Threading::{
                 AttachThreadInput, GetCurrentProcess, GetCurrentProcessId, GetCurrentThreadId,
                 OpenProcess, OpenProcessToken, PROCESS_ACCESS_RIGHTS, PROCESS_NAME_WIN32,
                 PROCESS_QUERY_LIMITED_INFORMATION, QueryFullProcessImageNameW,
             },
+            Variant::VARIANT,
         },
         UI::{
             HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI},
             Shell::{
-                BHID_EnumItems, IEnumShellItems, IShellItem2, IShellLinkW, IVirtualDesktopManager,
-                KF_FLAG_DEFAULT,
+                BHID_EnumItems, CSIDL_DESKTOP, IEnumShellItems, IShellBrowser, IShellDispatch2,
+                IShellFolderViewDual, IShellItem2, IShellLinkW, IShellWindows,
+                IVirtualDesktopManager, KF_FLAG_DEFAULT,
                 PropertiesSystem::{GPS_DEFAULT, IPropertyStore, SHGetPropertyStoreForWindow},
                 SHCreateItemFromParsingName, SHELLEXECUTEINFOW, SHGetKnownFolderItem,
-                SHGetKnownFolderPath, SHLoadIndirectString, SIGDN_NORMALDISPLAY, ShellExecuteExW,
-                ShellLink, VirtualDesktopManager,
+                SHGetKnownFolderPath, SHLoadIndirectString, SID_STopLevelBrowser,
+                SIGDN_NORMALDISPLAY, SVGIO_BACKGROUND, SWC_DESKTOP, SWFO_NEEDDISPATCH,
+                ShellExecuteExW, ShellLink, ShellWindows, VirtualDesktopManager,
             },
             WindowsAndMessaging::{
                 DispatchMessageW, FindWindowExW, GW_OWNER, GWL_EXSTYLE, GWL_STYLE, GetClassNameW,
-                GetDesktopWindow, GetForegroundWindow, GetParent, GetWindow, GetWindowLongW,
-                GetWindowRect, GetWindowTextW, GetWindowThreadProcessId, HWND_BROADCAST, IsIconic,
-                IsWindow, IsWindowVisible, IsZoomed, MSG, PM_REMOVE, PeekMessageW, PostMessageW,
-                SET_WINDOW_POS_FLAGS, SHOW_WINDOW_CMD, SPI_GETDESKWALLPAPER, SPI_SETDESKWALLPAPER,
-                SPIF_SENDCHANGE, SPIF_UPDATEINIFILE, SW_SHOWNORMAL, SWP_ASYNCWINDOWPOS,
-                SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER,
-                SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS, SendMessageW, SendNotifyMessageW,
-                SetWindowPos, ShowWindow, ShowWindowAsync, SystemParametersInfoW, TranslateMessage,
-                WINDOW_EX_STYLE, WINDOW_STYLE, WM_SETTINGCHANGE, WS_SIZEBOX, WS_THICKFRAME,
+                GetDesktopWindow, GetForegroundWindow, GetParent, GetPropW, GetWindow,
+                GetWindowLongW, GetWindowRect, GetWindowTextW, GetWindowThreadProcessId,
+                HWND_BROADCAST, IsIconic, IsWindow, IsWindowVisible, IsZoomed, MSG, PM_REMOVE,
+                PeekMessageW, PostMessageW, SET_WINDOW_POS_FLAGS, SHOW_WINDOW_CMD,
+                SPI_GETDESKWALLPAPER, SPI_SETDESKWALLPAPER, SPIF_SENDCHANGE, SPIF_UPDATEINIFILE,
+                SW_SHOWNORMAL, SWP_ASYNCWINDOWPOS, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+                SWP_NOZORDER, SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS, SendMessageW,
+                SendNotifyMessageW, SetWindowPos, ShowWindow, ShowWindowAsync,
+                SystemParametersInfoW, TranslateMessage, WINDOW_EX_STYLE, WINDOW_STYLE,
+                WM_SETTINGCHANGE, WS_SIZEBOX, WS_THICKFRAME,
             },
         },
     },
@@ -308,6 +315,12 @@ impl WindowsApi {
             && window_rect.top <= rc_monitor.top + TOLERANCE
             && window_rect.right >= rc_monitor.right - TOLERANCE
             && window_rect.bottom >= rc_monitor.bottom - TOLERANCE)
+    }
+
+    /// Whether the window carries a (non-null) prop with this name.
+    pub fn has_prop(hwnd: HWND, name: &str) -> bool {
+        let name = WindowsString::from(name);
+        !unsafe { GetPropW(hwnd, name.as_pcwstr()) }.0.is_null()
     }
 
     pub fn is_cloaked(hwnd: HWND) -> Result<bool> {
@@ -978,13 +991,6 @@ impl WindowsApi {
         ))
     }
 
-    pub fn refresh_desktop() -> Result<()> {
-        unsafe {
-            SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, None, SPIF_UPDATEINIFILE)?;
-        }
-        Ok(())
-    }
-
     pub fn set_wallpaper(path: PathBuf) -> Result<()> {
         if !path.exists() {
             return Err("File not found".into());
@@ -1006,6 +1012,14 @@ impl WindowsApi {
     pub fn exit_windows(flags: EXIT_WINDOWS_FLAGS, reason: SHUTDOWN_REASON) -> Result<()> {
         WindowsApi::enable_privilege(SE_SHUTDOWN_NAME)?;
         unsafe { ExitWindowsEx(flags, reason) }?;
+        Ok(())
+    }
+
+    /// https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-initiateshutdownw
+    pub fn initiate_shutdown(flags: SHUTDOWN_FLAGS, reason: SHUTDOWN_REASON) -> Result<()> {
+        WindowsApi::enable_privilege(SE_SHUTDOWN_NAME)?;
+        let code = unsafe { InitiateShutdownW(PCWSTR::null(), PCWSTR::null(), 0, flags, reason) };
+        WIN32_ERROR(code).ok()?;
         Ok(())
     }
 
@@ -1275,6 +1289,70 @@ impl WindowsApi {
         elevated: bool,
     ) -> Result<()> {
         log::trace!("Running: {program:?} with args: {args:?} in working dir: {working_dir:?}");
+        match Self::shell_execute_through_explorer(&program, &args, &working_dir, elevated) {
+            Ok(()) => return Ok(()),
+            Err(err) => log::error!("Failed to execute through explorer, falling back: {err}"),
+        }
+        Self::shell_execute(program, args, working_dir, elevated)
+    }
+
+    /// Runs `ShellExecute` inside explorer.exe (via the desktop's `IShellDispatch2`), so the
+    /// spawned process is a child of explorer instead of ours: it doesn't inherit our console,
+    /// environment, elevation, or job objects. Note: this is asynchronous, launch errors
+    /// (e.g. file not found) are reported by explorer to the user, not to us.
+    fn shell_execute_through_explorer(
+        program: &str,
+        args: &Option<String>,
+        working_dir: &Option<PathBuf>,
+        elevated: bool,
+    ) -> Result<()> {
+        Com::run_with_context(|| unsafe {
+            let shell_windows: IShellWindows = Com::create_instance(&ShellWindows)?;
+
+            let mut hwnd = 0;
+            let desktop = shell_windows.FindWindowSW(
+                &VARIANT::from(CSIDL_DESKTOP as i32),
+                &VARIANT::default(),
+                SWC_DESKTOP,
+                &mut hwnd,
+                SWFO_NEEDDISPATCH,
+            )?;
+
+            let service_provider: IServiceProvider = desktop.cast()?;
+            let browser: IShellBrowser = service_provider.QueryService(&SID_STopLevelBrowser)?;
+            let view = browser.QueryActiveShellView()?;
+            // the background object is only handed out as IDispatch, asking directly for
+            // IShellFolderViewDual fails with E_NOINTERFACE
+            let folder_view: IShellFolderViewDual =
+                view.GetItemObject::<IDispatch>(SVGIO_BACKGROUND)?.cast()?;
+            let shell: IShellDispatch2 = folder_view.Application()?.cast()?;
+
+            let as_variant = |value: Option<String>| match value {
+                Some(value) => VARIANT::from(BSTR::from(value)),
+                None => VARIANT::default(),
+            };
+
+            shell.ShellExecute(
+                &BSTR::from(program),
+                &as_variant(args.clone()),
+                &as_variant(
+                    working_dir
+                        .as_ref()
+                        .map(|d| d.to_string_lossy().to_string()),
+                ),
+                &as_variant(elevated.then(|| "runas".to_string())),
+                &VARIANT::from(SW_SHOWNORMAL.0),
+            )?;
+            Ok(())
+        })
+    }
+
+    fn shell_execute(
+        program: String,
+        args: Option<String>,
+        working_dir: Option<PathBuf>,
+        elevated: bool,
+    ) -> Result<()> {
         Self::refresh_environment_variables();
 
         let program = WindowsString::from_str(&program);

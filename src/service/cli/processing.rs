@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use positioning::{AnimationOrchestrator, PositionerBuilder, easings::Easing};
+use positioning::{AnimationMode, AnimationOrchestrator, PositionerBuilder, easings::Easing};
 use slu_ipc::messages::{IpcResponse, SvcAction};
 
 use crate::{error::Result, task_scheduler::TaskSchedulerHelper, windows_api::WindowsApi};
@@ -12,7 +12,12 @@ async fn _process_action(command: SvcAction) -> Result<()> {
     match command {
         SvcAction::Stop => crate::exit(0),
         // -----------------------------------------------------------------------
-        SvcAction::SetStartup(enabled) => TaskSchedulerHelper::set_run_on_logon(enabled)?,
+        SvcAction::SetStartup(enabled) => {
+            if slu_ipc::identity::SUITE_BUILD {
+                return Err("Development suite does not install login tasks".into());
+            }
+            TaskSchedulerHelper::set_run_on_logon(enabled)?;
+        }
         SvcAction::ShowWindow { hwnd, command } => WindowsApi::show_window(hwnd, command)?,
         SvcAction::ShowWindowAsync { hwnd, command } => {
             WindowsApi::show_window_async(hwnd, command)?
@@ -56,6 +61,7 @@ async fn _process_action(command: SvcAction) -> Result<()> {
                 builder.build(),
                 animation_duration,
                 easing,
+                AnimationMode::Buffered,
                 move |result| {
                     if let Err(err) = result {
                         log::error!("Animated window placement failed: {err}");

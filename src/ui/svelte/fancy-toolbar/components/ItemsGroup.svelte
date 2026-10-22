@@ -2,14 +2,17 @@
   import type { ToolbarItem, ToolbarItem2 } from "@seelen-ui/lib/types";
   import { plugins } from "../state/items.svelte.ts";
   import SortableItem from "./SortableItem.svelte";
+  import { isDesktopSuite } from "../state/getters.svelte.ts";
+  import SuiteMetrics from "./SuiteMetrics.svelte";
+  import SuiteInput from "./SuiteInput.svelte";
 
   interface Props {
-    id: string;
+    placement: string;
     items: ToolbarItem2[];
     itemIndexById: Map<string, number>;
   }
 
-  let { id, items, itemIndexById }: Props = $props();
+  let { placement, items, itemIndexById }: Props = $props();
 
   let entries = $derived.by(() => {
     const expanded: { pluginId?: string; index: number; item: ToolbarItem }[] = [];
@@ -34,8 +37,12 @@
   });
 </script>
 
-<div class="ft-bar-container ft-bar-{id}">
+<div class="ft-bar-container ft-bar-{placement}">
+  {#if isDesktopSuite && placement === "right"}
+    <SuiteMetrics />
+    <SuiteInput />
+  {/if}
   {#each entries as entry (entry.item.id)}
-    <SortableItem module={entry.item} index={entry.index} pluginId={entry.pluginId} />
+    <SortableItem module={entry.item} index={entry.index} pluginId={entry.pluginId} {placement} />
   {/each}
 </div>

@@ -1,0 +1,14 @@
+[package]
+name = "suite-settings-policy-tests"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+serde_json = "1"
+
+[[test]]
+name = "preferences"
+path = "preferences.rs"

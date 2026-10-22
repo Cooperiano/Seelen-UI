@@ -1,0 +1,7 @@
+// Bounded resource patch for installed previews that contain the old vw clamp.
+// Keep in sync with the default theme until the next complete resource rebuild.
+.quick-settings {
+  width: 340px;
+  min-width: 340px;
+  max-width: none;
+}

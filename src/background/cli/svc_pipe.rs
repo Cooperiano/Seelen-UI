@@ -57,8 +57,8 @@ impl ServicePipe {
                 &Default::default(),
                 &Default::default(),
             )?;
-            let folder = task_service.GetFolder(&"\\Seelen".into())?;
-            let task = folder.GetTask(&"Seelen UI Service".into())?;
+            let folder = task_service.GetFolder(&slu_ipc::identity::TASK_FOLDER.into())?;
+            let task = folder.GetTask(&slu_ipc::identity::SERVICE_TASK.into())?;
 
             let actions = task.Definition()?.Actions()?;
             // ask to microsoft what that hell this start counting from 1 instead 0

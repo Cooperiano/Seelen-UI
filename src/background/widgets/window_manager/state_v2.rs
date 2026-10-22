@@ -12,7 +12,7 @@ use seelen_core::{
         twm::{TwmNodeKind, TwmPlugin, TwmReservation, TwmStackPolicy},
     },
 };
-use windows::Win32::UI::WindowsAndMessaging::SW_FORCEMINIMIZE;
+use windows::Win32::UI::WindowsAndMessaging::{HWND_TOP, SW_FORCEMINIMIZE, SW_SHOWNOACTIVATE};
 
 use crate::{
     app::emit_to_webviews,
@@ -21,15 +21,14 @@ use crate::{
     hook::HookManager,
     modules::apps::application::UserAppsManager,
     state::application::FULL_STATE,
-    tauri_handlers::Handlers,
     utils::lock_free::TracedMutex,
-    virtual_desktops::SluWorkspacesManager2,
+    virtual_desktops::VdManager,
     widgets::window_manager::{
         WindowManagerV2,
         cli::{Axis, Direction, StepWay},
-        handler::set_app_window_position,
+        handler::{set_app_window_position, set_app_windows_positions},
     },
-    windows_api::{monitor::Monitor, window::Window},
+    windows_api::{WindowsApi, monitor::Monitor, window::Window},
 };
 
 pub static MINIMIZED_BY_STACK: LazyLock<scc::HashSet<isize>> = LazyLock::new(scc::HashSet::new);
@@ -65,7 +64,7 @@ event_manager!(TwmState, TwmStateEvent);
 
 impl TwmState {
     fn initialize(&mut self) {
-        let vd = SluWorkspacesManager2::instance();
+        let vd = VdManager::instance();
         vd.monitors.for_each(|(_, monitor)| {
             let active_workspace_id = monitor.active_workspace_id().clone();
             for row in monitor.workspaces.rows() {
@@ -94,7 +93,7 @@ impl TwmState {
             }
         });
 
-        SluWorkspacesManager2::subscribe(|event| {
+        VdManager::subscribe(|event| {
             WindowManagerV2::process_vd_event(event).log_error();
         });
 
@@ -320,6 +319,20 @@ impl TwmState {
         }
     }
 
+    /// Drops all the state related to a destroyed workspace.
+    pub fn remove_workspace(&mut self, workspace_id: &WorkspaceId) {
+        self.state.workspaces.remove(workspace_id);
+        self.monocle.remove(workspace_id);
+        self.layout_cache.remove(workspace_id);
+        if self
+            .pending_reservation
+            .as_ref()
+            .is_some_and(|r| &r.workspace_id == workspace_id)
+        {
+            self.cancel_reservation();
+        }
+    }
+
     pub fn get_tree_for_window_mut(
         &mut self,
         window: &Window,
@@ -390,7 +403,7 @@ impl TwmState {
             }
             let mut positions = HashMap::new();
             positions.insert(window_id, rect);
-            return Handlers::set_app_windows_positions(positions);
+            return set_app_windows_positions(positions);
         }
 
         let Some(leaf_node_id) = tree.node_of_window(&window_id) else {
@@ -670,11 +683,9 @@ impl TwmState {
 
     pub fn restore_stacks(&self) {
         let mut active_ids = std::collections::HashSet::new();
-        SluWorkspacesManager2::instance()
-            .monitors
-            .for_each(|(_, monitor)| {
-                active_ids.insert(monitor.active_workspace_id().clone());
-            });
+        VdManager::instance().monitors.for_each(|(_, monitor)| {
+            active_ids.insert(monitor.active_workspace_id().clone());
+        });
 
         for (workspace_id, tree) in &self.state.workspaces {
             if !active_ids.contains(workspace_id) {
@@ -688,7 +699,18 @@ impl TwmState {
 
                 if let Some(active) = node.active_window {
                     MINIMIZED_BY_STACK.remove_sync(&active);
-                    Window::from(active).unminimize().log_error();
+                    let window = Window::from(active);
+                    // only sanitizes visibility, never activates: focus is the caller's job
+                    // (see `reveal_stack_window`).
+                    if window.is_minimized() {
+                        window.show_window(SW_SHOWNOACTIVATE).log_error();
+                        // a restored window can be drawn above the focused one even without
+                        // activation, so keep the focused managed window on top.
+                        let foreground = Window::get_foregrounded();
+                        if self.is_managed(&foreground) {
+                            WindowsApi::set_z_order(foreground.hwnd(), HWND_TOP).log_error();
+                        }
+                    }
 
                     for w in &node.windows {
                         if *w != active {
@@ -711,11 +733,14 @@ impl TwmState {
         };
         let node = tree.nodes.get_mut(&node_id).ok_or("Node not found")?;
 
-        if node.kind != TwmNodeKind::Stack {
+        // Already active: also covers the `WindowUnminimizedByUser` echo of `restore_stacks`
+        // restoring it, which must not steal the focus.
+        if node.kind != TwmNodeKind::Stack || node.active_window == Some(window_id) {
             return Ok(());
         }
 
         node.active_window = Some(window_id);
+        Self::reveal_stack_window(window);
         Self::send(TwmStateEvent::Changed);
         Ok(())
     }
@@ -746,10 +771,20 @@ impl TwmState {
         } else {
             (idx + len - 1) % len
         };
-        node.active_window = Some(node.windows[next_idx]);
+        let next = node.windows[next_idx];
+        node.active_window = Some(next);
 
+        Self::reveal_stack_window(&Window::from(next));
         Self::send(TwmStateEvent::Changed);
         Ok(())
+    }
+
+    /// Restores and focuses the new active window of a stack. The siblings are minimized
+    /// afterwards by [`Self::restore_stacks`] on the `Changed` event.
+    fn reveal_stack_window(window: &Window) {
+        MINIMIZED_BY_STACK.remove_sync(&window.address());
+        window.unminimize().log_error();
+        window.focus().log_error();
     }
 }
 

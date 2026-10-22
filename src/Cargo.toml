@@ -1,13 +1,13 @@
 [package]
 name = "seelen-ui"
-version = "2.8.6"
+version = "2.8.8"
 description = "Seelen UI Background"
 authors = ["eythaann"]
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/eythaann/seelen-ui.git"
 default-run = "seelen-ui"
 edition = "2024"
-rust-version = "1.89"
+rust-version = "1.97"
 
 [[bin]]
 name = "seelen-ui"
@@ -31,8 +31,6 @@ slu-utils = { workspace = true }
 positioning = { workspace = true }
 tauri = { workspace = true, features = ["devtools", "protocol-asset"] }
 tauri-plugin-dialog = { workspace = true }
-tauri-plugin-shell = { workspace = true }
-tauri-plugin-process = { workspace = true }
 tauri-plugin-updater = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -63,6 +61,7 @@ arc-swap = { workspace = true }
 notify-debouncer-full = { workspace = true }
 encoding_rs = { workspace = true }
 quick-xml = { workspace = true, features = ["serialize", "encoding"] }
+rusqlite = { workspace = true, features = ["bundled"] }
 backtrace = { workspace = true }
 owo-colors = { workspace = true }
 rust-i18n = { workspace = true }
@@ -76,7 +75,7 @@ rustfft = { workspace = true }
 discord-rich-presence = { workspace = true }
 win-hotkeys = { workspace = true }
 walkdir = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["process"] }
 seelen-core = { workspace = true, features = ["salvo"] }
 wmi = { workspace = true }
 windows = { workspace = true, features = [
@@ -192,6 +191,9 @@ futures = { workspace = true }
 salvo = { workspace = true, features = ["oapi"] }
 
 [features]
+desktop-suite = ["slu-ipc/desktop-suite"]
+# Opt-in only after native shell replacement and recovery acceptance.
+native-shell-takeover = []
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.
 # If you use cargo directly instead of tauri's cli you can use this feature flag to switch between tauri's `dev` and `build` modes.
 custom-protocol = ["tauri/custom-protocol"]

@@ -1,3 +1,132 @@
+suite_autosave:
+  idle: Changes save automatically
+  pending: Applying changes…
+  saving: Saving…
+  saved: Saved
+  error: Not saved — changes retained
+  retry: Retry
+  apply: Apply
+  reload_title: Reload these settings?
+  reload_description: Discard only this section's pending changes and read its current configuration. Other sections are retained.
+  restart: Restart now
+  restart_title: Restart the desktop suite?
+  restart_description: Settings are saved. This option takes effect after restart. Finish dragging and lift your fingers first.
+  touchpad_confirm: Apply touchpad changes?
+  touchpad_warning: This component currently needs a brief normal restart. Finish dragging and lift your fingers before continuing. Other settings apply live.
+suite_preferences:
+  stats_intro: Monitoring settings live here. Stats keeps its existing collector and applies saved changes without a second window.
+  touchpad_intro: Gesture settings live here. Existing tracking curves and Windows pointer settings remain unchanged unless explicitly adjusted.
+  reload: Reload
+  failed: Could not load or save these settings
+  failed_description: Your changes are retained for retry. If settings changed elsewhere, reload this section to resolve the conflict. Original settings are backed up before any write.
+  saved: Saved and read back successfully
+  disabled: This component is off
+  disabled_description: You can edit its settings here. Saving does not enable or start a disabled component.
+  unsaved: Unsaved changes
+  discard_confirm: Discard unsaved settings?
+  discard_description: Closing now discards unsaved edits in the main settings window. Saved configuration is not affected.
+  discard: Discard and close
+  save_hint: Changes save automatically. Switching pages keeps pending changes; failed writes remain available for retry.
+  touchpad_apply: Changes save automatically. A running touchpad component asks you to lift your fingers before its required brief restart.
+  RefreshIntervalMilliseconds: Refresh interval (ms)
+  HistorySeconds: History duration (seconds)
+  LowPowerMode: Low-power collection
+  menu_metrics: Menu bar metrics
+  metric_hint: Set visibility, display style, color and order. No new collector is created.
+  move_up: Move {{name}} up
+  move_down: Move {{name}} down
+  display_style: Display style
+  color: Metric color
+  alerts: Alerts
+  comparison: Comparison
+  threshold: Threshold
+  sustain: Duration (s)
+  above: Above
+  below: Below
+  ThreeFingerDrag: Three-finger drag
+  ThreeFingerDragButton: Drag button
+  FourFingerGestures: Custom four-finger overview
+  four_finger_hint: Keep this off to retain Windows gestures. Opening this page never enables it.
+  tracking: Unified tracking
+  tracking_description: One tracking-speed and acceleration entry using the original component backend. Reading does not change Windows settings. Legacy per-device gain values are preserved.
+  tracking_speed: Tracking speed
+  tracking_failed: Windows tracking settings could not be verified
+  acceleration: Pointer acceleration
+  acceleration_confirm: Change shared pointer acceleration?
+  acceleration_warning: This changes Windows mouse acceleration as well as touchpad acceleration. Saving requires separate confirmation; speed-only changes do not alter acceleration.
+  advanced: Gesture thresholds
+  ThreeFingerDragStartThreshold: Drag start threshold
+  FourFingerSwipeThreshold: Four-finger trigger distance
+  Language: Touchpad component language
+  system: Follow system
+  RecordLogs: Record touchpad diagnostic logs
+  logging_description: Logs stay on this computer and are never uploaded automatically.
+  styles:
+    stacked: Label and value
+    inline: Inline
+    value: Value only
+    chart: Chart
+  buttons:
+    none: No button
+    left: Left button
+    right: Right button
+    middle: Middle button
+  metrics:
+    cpu: CPU usage
+    gpu: GPU usage
+    ram: Memory
+    power: Sensors
+    cpu_temp: CPU temperature
+    cpu_freq: CPU frequency
+    gpu_temp: GPU temperature
+    gpu_power: GPU power
+    gpu_memory: GPU memory
+    disk: Disk
+    network_down: Download
+    network_up: Upload
+    battery: Battery
+    bluetooth: Bluetooth
+desktop_suite:
+  replace_taskbar: Replace Windows taskbar
+  taskbar_active: Windows taskbar is hidden. Dock display mode is managed in Dock settings.
+  taskbar_recovery: Enable the Dock to replace Windows taskbar. The original returns when the Dock is disabled, unavailable, or the suite exits.
+  taskbar_visibility: Display mode
+  taskbar_always: Always visible
+  taskbar_autohide: Automatically hide
+  taskbar_visibility_description: Windows taskbar stays hidden in both modes. Auto-hide reveals the Dock at the screen edge; disabling the Dock or exiting the suite restores the original taskbar and its settings.
+  host: Seelen Desktop Suite
+  host_description: Seelen is the host. Stats and Touchpad are optional components, enabled by default.
+  startup_description: One sign-in entry starts Seelen and only the components enabled below.
+  configure: Configure
+  running: Running · starts with Seelen
+  not_running: Enabled, but not running. Retry to start it.
+  component_failed: The operation was not confirmed. Check the component and retry; no force quit was used.
+  stats_disabled: Off · the top bar metrics area stays empty. Your monitoring preferences are retained.
+  touchpad_disabled: Off · custom gestures stop. Your touchpad preferences are retained.
+  quit: Quit entire suite
+  quit_description: Stop Seelen, Stats and Touchpad normally. Enabled components return next time you launch Seelen.
+  title: Desktop Suite
+  about: About
+  upstream_version: Seelen UI 2.8.8, locally adapted. Original copyright and license are retained.
+  local_development: Local development build
+  development_policy: No official Seelen login, cloud sync, analytics or automatic update. Native taskbar replacement is opt-in and guarded by automatic recovery.
+  startup_unavailable: Development build does not create login tasks. Existing installed modules keep their startup settings.
+  stats: System monitoring
+  stats_description: Configure monitoring in this window. Keep its single telemetry collector.
+  touchpad: Touchpad
+  touchpad_description: Configure touchpad gestures in this window. Keep the existing unified tracking source.
+  activity_monitor: Activity Monitor
+  activity_monitor_description: Open the installed process monitor independently.
+  weg: Dock
+  weg_description: Configure the native Seelen Dock, pinned applications, and running windows.
+  toolbar: Menu Bar
+  toolbar_description: Configure the Seelen top bar and system controls.
+  checking: Checking
+  retry: Retry
+  unavailable: Not available
+  open_failed: Could not open the module. Check its installation and try again.
+  upstream: Based on Seelen UI · AGPL-3.0
+  integration_boundary: Seelen owns startup and exit. Stats owns telemetry; Touchpad owns input. Activity Monitor opens independently.
 action:
   confirm: Are you sure?
   confirm_body: This action cannot be undone.
@@ -410,6 +539,11 @@ weg:
     full_width: Full screen width
     min_content: Small as can be
   padding: Padding
+  reveal_on_attention:
+    label: Show when an app requests attention
+    never: Never
+    until_activated: Until the app is opened
+    while_flashing: While it flashes
   show_end_task: Show end task in taskbar
   width: Width
 welcome:

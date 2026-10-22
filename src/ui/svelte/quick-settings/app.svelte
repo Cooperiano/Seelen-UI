@@ -25,6 +25,7 @@
 </script>
 
 <div class={["slu-std-popover", "quick-settings"]}>
+  <header class="quick-settings-heading">{$t("control_center")}</header>
   <RadioButtons />
   <BrightnessControl />
   <MediaDevices />
