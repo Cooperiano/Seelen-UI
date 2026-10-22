@@ -1,0 +1,33 @@
+name: Stats component source verification
+
+on:
+  push:
+    branches: [master, 'components/**']
+    paths: ['components/**', '.github/workflows/components-ci.yml']
+  pull_request:
+    branches: [master]
+    paths: ['components/**', '.github/workflows/components-ci.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stats-source-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  stats-contracts:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore components/Stats.Tests/Stats.Tests.csproj --locked-mode
+      - run: dotnet build components/Stats/Stats.csproj -c Debug --no-restore
+      - name: Bounded route contracts (no publisher, UI or hardware sampling)
+        run: dotnet run --project components/Stats.Tests/Stats.Tests.csproj -c Debug --no-restore -- --suite-contract-only

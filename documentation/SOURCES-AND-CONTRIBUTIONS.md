@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | [Seelen UI](https://github.com/eythaann/Seelen-UI), v2.8.8 | Actual Rust/Tauri host, Svelte toolbar/Dock/Quick Settings, React settings, resources/windows | Original authors and contributors retain credit. Git ancestry, license and notices are preserved; this fork adds adaptations. |
 | [ThreeFingerDragOnWindows](https://github.com/clementgre/ThreeFingerDragOnWindows) | Foundation of the separately installed modified Touchpad Control | MIT, Clément Grennerat and contributors. This publication includes the host adapter, not its complete modified source/package. |
-| Stats for Windows (local C# component) | Existing publisher consumed through the v7 shared-memory ABI | Separate component, not a port of the macOS Stats application. Collector source/version/licensing inventory remains outside this publication. |
+| Stats for Windows (C# component) | Existing publisher consumed through the v7 shared-memory ABI | Version 1.0.5 source, shared libraries and tests in `components/`. Original code AGPL-3.0-or-later by owner's explicit choice; third-party terms retained. Not a macOS Stats collector port. |
 | [Brimbar](https://github.com/Cooperiano/Brimbar) | Earlier bar implementation and integration experience | Prior project, not the active host; retired WPF bar/Dock is not bundled or reactivated. |
 | [AppSwitcherBar](https://github.com/adamecr/AppSwitcherBar), [Chromium taskbar utility](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/chrome/installer/util/taskbar_util.cc) | ABI references for native Shell pin enumeration | References, not bundled replacement desktops; see native pin reader. |
 | Apple/macOS | Interaction reference: grouping, fixed/running distinction, compact controls, precision goals | No Apple source, proprietary driver or private acceleration algorithm is claimed or supplied. No endorsement is implied. |
@@ -27,7 +27,7 @@ assisted by OpenAI Codex. Upstream authorship is not reassigned to Julian or AI.
 
 | Adaptation work | Source | Limit |
 | --- | --- | --- |
-| Seelen as outer host; optional Stats/Touchpad | `desktop_suite/lifecycle.rs`, settings `modules/desktopSuite/` | External executables are not published here. |
+| Seelen as outer host; optional Stats/Touchpad | `desktop_suite/lifecycle.rs`, settings `modules/desktopSuite/`, `components/` | Source publication, not a binary/installer release. |
 | Unified navigation, English/Chinese labels, auto-save/conflict handling | settings navigation, `AutoSaveActions.tsx`, `settingsAutoSave.ts`, `preferences_store.rs` | Not all upstream languages have new suite translations. |
 | Stats history and empty disabled state | `contract.rs`, `SuiteMetrics.svelte`, `metrics.ts` | ABI checks do not prove physical sensor accuracy. |
 | Retained Shift 中/英 mode detection | `input.rs`, `SuiteInput.svelte` | Tested Pinyin behavior is not universal IME support. |
@@ -48,6 +48,7 @@ signed end-user release. Source was exported onto public upstream history instea
 of publishing private development commits. Personal settings, original screenshots,
 runtime logs, dumps, certificates, installers and machine handoffs are excluded.
 
-The owner authorized publication and attribution. External components need their
-own exact-version and licensing inventory before claiming that the complete
-assembled suite is reproducibly open source.
+The owner authorized publication and attribution, and selected AGPL for original
+Stats code on 2026-10-22. Installed Stats PDB checksums matched all 31 non-generated
+source documents before export. Touchpad/Activity Monitor still need their own
+exact-version/license inventory; a complete reproducible assembled suite is not claimed.

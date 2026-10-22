@@ -1,0 +1,185 @@
+<Window x:Class="MenuBar.ModulePopupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Stats"
+        Width="290"
+        SizeToContent="Height"
+        MaxHeight="690"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        Foreground="#FF202124">
+    <Window.Resources>
+        <Style x:Key="PopupButton" TargetType="Button">
+            <Setter Property="Foreground" Value="#FF30343A" />
+            <Setter Property="Background" Value="#FFF0F2F5" />
+            <Setter Property="BorderBrush" Value="#FFDDE1E6" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="7" /><Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
+                <Grid Width="7"><Track x:Name="PART_Track" IsDirectionReversed="True">
+                    <Track.DecreaseRepeatButton><RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Opacity="0"/></Track.DecreaseRepeatButton>
+                    <Track.Thumb><Thumb Width="3" Margin="2"><Thumb.Template><ControlTemplate TargetType="Thumb"><Border Background="#FFB6BCC4" CornerRadius="2"/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+                    <Track.IncreaseRepeatButton><RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Opacity="0"/></Track.IncreaseRepeatButton>
+                </Track></Grid>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="#FAFFFFFF"
+            BorderBrush="#FFD7DBE0"
+            BorderThickness="1"
+            CornerRadius="14"
+            Padding="16">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="7" Opacity="0.20" />
+        </Border.Effect>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+            <Grid Margin="2,0,2,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Width="10" Height="10" CornerRadius="5"
+                        Background="{Binding Accent}" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Subtitle}" FontSize="10" Foreground="#FF68717D" />
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="{Binding RefreshLabel}" FontSize="10" Foreground="#FF31835C" VerticalAlignment="Center" />
+            </Grid>
+
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="66" />
+                    <ColumnDefinition Width="66" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding PrimaryValue}" FontSize="30" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding PrimaryCaption}" FontSize="11" Foreground="#FF68717D" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SecondaryLeftValue}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding SecondaryLeftLabel}" FontSize="10" Foreground="#FF68717D" HorizontalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SecondaryRightValue}" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding SecondaryRightLabel}" FontSize="10" Foreground="#FF68717D" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+
+            <ProgressBar Height="3" Minimum="0" Maximum="100" Value="{Binding PrimaryPercent, Mode=OneWay}"
+                         Foreground="{Binding Accent}" Background="#FFE8EBEF" BorderThickness="0" />
+
+            <TextBlock Text="使用历史" Margin="0,16,0,7" FontSize="11" Foreground="#FF68717D" />
+            <Border Height="84" Background="#FFF4F6F8" BorderBrush="#FFE4E7EB" BorderThickness="1" CornerRadius="9" ClipToBounds="True">
+                <Canvas x:Name="HistoryCanvas" Margin="1" SizeChanged="HistoryCanvas_SizeChanged" />
+            </Border>
+
+            <StackPanel x:Name="CoreSection" Margin="0,14,0,0">
+                <TextBlock Text="逻辑核心" Margin="0,0,0,6" FontSize="11" Foreground="#FF68717D" />
+                <ItemsControl ItemsSource="{Binding Cores}">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="74" Height="31" Margin="0,0,5,5" Background="#FFF4F6F8" CornerRadius="6" Padding="7,4">
+                                <Grid>
+                                    <TextBlock Text="{Binding Name}" FontSize="9" Foreground="#FF7A828C" VerticalAlignment="Top" />
+                                    <TextBlock Text="{Binding Value}" FontSize="11" Foreground="#FF65D5FF" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel x:Name="DetailsSection">
+            <TextBlock Text="详情" Margin="0,16,0,6" FontSize="11" Foreground="#FF68717D" />
+            <ItemsControl ItemsSource="{Binding Details}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Height" Value="27" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                                            <Setter Property="Height" Value="32" />
+                                            <Setter Property="Margin" Value="0,5,0,0" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Label}" FontSize="10.5" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" Margin="0,0,12,0" ToolTip="{Binding ToolTip}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#FF4A5058" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsHeader}" Value="True">
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                <Setter Property="Foreground" Value="#FF202124" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="10.5" FontWeight="SemiBold"
+                                       Foreground="{Binding Accent}" VerticalAlignment="Center" TextAlignment="Right" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            </StackPanel>
+
+            <StackPanel x:Name="ProcessSection" Margin="0,12,0,0">
+                <TextBlock Text="{Binding ProcessCaption}" Margin="0,0,0,6" FontSize="11" Foreground="#FF68717D" />
+                <ItemsControl ItemsSource="{Binding Processes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Height="25">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" FontSize="10" Foreground="#FF4A5058" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="10" Foreground="#FF68717D" VerticalAlignment="Center" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <Grid Margin="0,14,0,0">
+                <Button Style="{StaticResource PopupButton}" Content="模块设置" HorizontalAlignment="Left"
+                        Click="Settings_Click" />
+            </Grid>
+        </StackPanel>
+        </ScrollViewer>
+    </Border>
+</Window>
