@@ -24,7 +24,9 @@ multiplier is added here. Component preferences live in the main window, while
 Quick Settings and metric-detail popovers remain separate transient surfaces.
 
 Stats source and shared libraries are in `components/`; see its separate .NET
-build and bounded contract checks. Touchpad/Activity Monitor sources are not bundled.
+build and bounded contract checks. Touchpad/helper sources live in the separate
+[MIT adaptation fork](https://github.com/Cooperiano/ThreeFingerDragOnWindows).
+Activity Monitor is not bundled.
 Runtime component discovery/configuration is implemented in
 `desktop_suite/lifecycle.rs`. Central tracking needs compatible Touchpad 48 or newer;
 metrics need a compatible Stats publisher built separately. A checkout is not a complete

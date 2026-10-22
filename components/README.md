@@ -34,5 +34,6 @@ Do not overwrite a running installed collector or copy user preferences into Git
 The owner chose AGPL for the original component code. [NOTICE](NOTICE.md),
 [LICENSE](LICENSE) and [dependency attribution](THIRD-PARTY.md) apply. Settings,
 hardware reports, source-machine docs/scripts, publish folders and binaries are
-excluded. Modified Touchpad Control and Activity Monitor sources remain outside
-this publication; their integration points remain in the Seelen host.
+excluded. Modified Touchpad Control/helper sources are available in the
+[separate MIT fork](https://github.com/Cooperiano/ThreeFingerDragOnWindows).
+Activity Monitor is outside this publication; integration points remain in the host.

@@ -5,7 +5,7 @@
 | Source | Reuse / relationship | Attribution and scope |
 | --- | --- | --- |
 | [Seelen UI](https://github.com/eythaann/Seelen-UI), v2.8.8 | Actual Rust/Tauri host, Svelte toolbar/Dock/Quick Settings, React settings, resources/windows | Original authors and contributors retain credit. Git ancestry, license and notices are preserved; this fork adds adaptations. |
-| [ThreeFingerDragOnWindows](https://github.com/clementgre/ThreeFingerDragOnWindows) | Foundation of the separately installed modified Touchpad Control | MIT, Clément Grennerat and contributors. This publication includes the host adapter, not its complete modified source/package. |
+| [ThreeFingerDragOnWindows](https://github.com/ClementGre/ThreeFingerDragOnWindows), 2.0.7 | Foundation of the separately built Touchpad Control | MIT, Clément Grennerat and contributors. Complete adapted WinUI/Core/helper source is in [Cooperiano's fork](https://github.com/Cooperiano/ThreeFingerDragOnWindows), with its own source checks and notices. No installer is published. |
 | Stats for Windows (C# component) | Existing publisher consumed through the v7 shared-memory ABI | Version 1.0.5 source, shared libraries and tests in `components/`. Original code AGPL-3.0-or-later by owner's explicit choice; third-party terms retained. Not a macOS Stats collector port. |
 | [Brimbar](https://github.com/Cooperiano/Brimbar) | Earlier bar implementation and integration experience | Prior project, not the active host; retired WPF bar/Dock is not bundled or reactivated. |
 | [AppSwitcherBar](https://github.com/adamecr/AppSwitcherBar), [Chromium taskbar utility](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/chrome/installer/util/taskbar_util.cc) | ABI references for native Shell pin enumeration | References, not bundled replacement desktops; see native pin reader. |
@@ -50,5 +50,8 @@ runtime logs, dumps, certificates, installers and machine handoffs are excluded.
 
 The owner authorized publication and attribution, and selected AGPL for original
 Stats code on 2026-10-22. Installed Stats PDB checksums matched all 31 non-generated
-source documents before export. Touchpad/Activity Monitor still need their own
-exact-version/license inventory; a complete reproducible assembled suite is not claimed.
+source documents before export. Touchpad source is separately published on genuine
+2.0.7 ancestry, retaining MIT and credit, with portable helper/test references.
+Its 301 core tests, helper and unpackaged WinUI x64 builds passed; physical feel is
+not certified. Activity Monitor remains outside this publication. A fully packaged,
+signed and clean-machine-accepted suite installer is not claimed.
