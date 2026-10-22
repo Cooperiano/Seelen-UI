@@ -9,12 +9,33 @@ use winreg::{RegKey, enums::HKEY_CURRENT_USER};
 
 use crate::{error::Result, windows_api::WindowsApi};
 
-/// Extracts the list of apps currently pinned to the native Windows taskbar.
-///
-/// It first tries to read the pin order from the registry (`Taskband\FavoritesResolve`),
-/// falling back to scanning the "Quick Launch\User Pinned\TaskBar" folder (sorted by
-/// creation time) when the registry value is missing, empty or unreadable.
+/// The Shell owns native pin order. Folder dates/registry byte scans are not a
+/// complete inventory (packaged apps and non-ASCII paths can be absent).
+/// Fail closed on *any* unresolved item, never silently import a partial list.
 pub fn get_windows_taskbar_pinned_apps() -> Result<Vec<WegItemData>> {
+    if slu_ipc::identity::SUITE_BUILD {
+        // Shell links require STA. WinRT package lookups can implicitly initialize
+        // an uninitialized worker as MTA, so keep the ENTIRE inventory conversion
+        // in one explicitly initialized STA, not just EnumObjects.
+        return std::thread::spawn(|| crate::windows_api::Com::run_with_context(|| {
+            super::native_pins::read()?.into_iter().map(|(display_name, parsing)| {
+            if Path::new(&parsing).extension().is_some_and(|ext| ext.eq_ignore_ascii_case("lnk")) {
+                return create_weg_item_from_shortcut(Path::new(&parsing));
+            }
+            if parsing.contains('!') && !parsing.contains('\\') && !parsing.contains('/') {
+                let path = crate::modules::apps::application::msix::MsixAppsManager::instance()
+                    // AUMID is the complete launch target; executable metadata is
+                    // optional (e.g. Settings). Never omit that native pin.
+                    .get_app_path(&parsing).ok().flatten().unwrap_or_default();
+                return Ok(WegItemData {
+                    id: uuid::Uuid::new_v4(), display_name, umid: Some(parsing), path,
+                    pinned: true, prevent_pinning: false, relaunch: None,
+                });
+            }
+            Err(format!("Unsupported native pinned item: {display_name}").into())
+            }).collect()
+        })).join().map_err(|_| "Native pin conversion failed")?;
+    }
     let mut pinned_apps = match get_taskbar_order_from_registry() {
         Ok(ordered_paths) if !ordered_paths.is_empty() => ordered_paths
             .into_iter()

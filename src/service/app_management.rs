@@ -121,6 +121,9 @@ pub fn start_app_monitoring(app_just_launched: bool) {
 
 /// will start the app on the interactive session
 pub fn launch_seelen_ui() -> Result<()> {
+    if slu_ipc::identity::SUITE_BUILD && was_installed_using_msix() {
+        return Err("Suite MSIX activation identity is not configured".into());
+    }
     let path = if was_installed_using_msix() {
         "shell:AppsFolder\\Seelen.SeelenUI_p6yyn03m1894e!App".to_string()
     } else {
@@ -141,6 +144,8 @@ pub fn launch_seelen_ui() -> Result<()> {
 pub fn kill_all_seelen_ui_processes() -> Result<()> {
     log::info!("Killing all Seelen UI processes in current session");
     let current_session = crate::windows_api::WindowsApi::current_session_id();
+    let owned_executable = std::env::current_exe()?.with_file_name("seelen-ui.exe");
+    let owned_path = owned_executable.to_string_lossy().to_lowercase();
 
     let mut sys = sysinfo::System::new();
     sys.refresh_processes(ProcessesToUpdate::All, true);
@@ -148,7 +153,10 @@ pub fn kill_all_seelen_ui_processes() -> Result<()> {
         .processes()
         .values()
         .filter(|p| {
-            if !p.exe().is_some_and(|path| path.ends_with("seelen-ui.exe")) {
+            if !p
+                .exe()
+                .is_some_and(|path| path.to_string_lossy().to_lowercase() == owned_path)
+            {
                 return false;
             }
             let mut session_id = 0u32;

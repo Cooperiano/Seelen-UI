@@ -3,7 +3,7 @@ use std::{collections::HashMap, path::PathBuf};
 use seelen_core::system_state::{RelaunchArguments, StartMenuLayout, StartMenuLayoutItem};
 
 use slu_ipc::{ServiceIpc, messages::SvcAction};
-use tauri::WebviewWindow;
+use tauri::{Manager, WebviewWindow};
 
 use crate::{
     app::{SeelenUI, get_app_handle},
@@ -22,6 +22,39 @@ use crate::{
 };
 
 impl crate::tauri_handlers::Handlers {
+    pub fn get_desktop_suite_modules() -> Result<Vec<String>> {
+        let resolver = get_app_handle().path();
+        let desktop = resolver.desktop_dir()?;
+        let local_data = resolver.local_data_dir()?;
+        Ok(utils::desktop_suite::MODULE_IDS
+            .iter()
+            .filter(|id| {
+                  if slu_ipc::identity::SUITE_BUILD && matches!(**id, "stats" | "touchpad") {
+                      return crate::modules::desktop_suite::lifecycle::component_path(id).is_ok_and(|p| p.is_file());
+                  }
+                utils::desktop_suite::module_path(id, &desktop, &local_data)
+                    .is_some_and(|path| path.is_file())
+            })
+            .map(|id| (*id).to_owned())
+            .collect())
+    }
+
+    pub fn open_desktop_suite_module(webview: WebviewWindow, module: String) -> Result<()> {
+        request_widget_permission(&webview, WidgetPerm::Run)?;
+        if slu_ipc::identity::SUITE_BUILD && matches!(module.as_str(), "stats" | "touchpad") {
+            return crate::widgets::show_settings_at(&format!("/{module}"));
+        }
+        let resolver = get_app_handle().path();
+        let path = utils::desktop_suite::module_path(
+            &module,
+            &resolver.desktop_dir()?,
+            &resolver.local_data_dir()?,
+        )
+        .filter(|path| path.is_file())
+        .ok_or("Desktop suite module is not installed")?;
+        WindowsApi::execute(path.to_string_lossy().to_string(), None, None, false)
+    }
+
     pub fn log_from_webview(level: u8, message: String, location: String) {
         let level = match level {
             1 => log::Level::Trace,

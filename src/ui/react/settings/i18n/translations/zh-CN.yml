@@ -1,3 +1,132 @@
+suite_autosave:
+  idle: 调整后自动保存
+  pending: 正在应用修改…
+  saving: 正在保存…
+  saved: 已保存
+  error: 未保存，修改已保留
+  retry: 重试
+  apply: 应用
+  reload_title: 重新载入这部分设置？
+  reload_description: 仅放弃这部分待保存的修改并读取当前配置，其他部分的修改会保留。
+  restart: 立即重启
+  restart_title: 重启桌面套件？
+  restart_description: 设置已保存，此选项需重启后生效。请先结束拖拽并把手移离触控板。
+  touchpad_confirm: 应用触控板修改？
+  touchpad_warning: 当前触控板组件仍需要短暂正常重启。请先结束拖拽并抬手，再继续。其他设置直接热生效。
+suite_preferences:
+  stats_intro: 在当前窗口调整监控设置。Stats 继续使用原有采集器，保存后热加载，不再另开设置窗口。
+  touchpad_intro: 在当前窗口调整手势。原有速度曲线、设备参数与 Windows 指针设置保持不变。
+  reload: 重新载入
+  failed: 未能读取或保存设置
+  failed_description: 修改已保留，可重试。若配置已在别处修改，可重新载入这部分来解除冲突。写入前会保留原文件备份。
+  saved: 已保存并核对读回结果
+  disabled: 此组件已停用
+  disabled_description: 仍可在这里调整配置；保存不会启用或启动已停用的组件。
+  unsaved: 有尚未保存的修改
+  discard_confirm: 放弃尚未保存的设置？
+  discard_description: 现在关闭会丢弃主设置窗口里尚未保存的草稿，不影响已保存配置。
+  discard: 放弃修改并关闭
+  save_hint: 调整后自动保存。切换页面保留待应用的修改，写入失败时可重试。
+  touchpad_apply: 调整后自动保存；运行中的触控板组件需要短暂重启时，会先提示抬手并等待确认。
+  RefreshIntervalMilliseconds: 刷新间隔（毫秒）
+  HistorySeconds: 历史时长（秒）
+  LowPowerMode: 低功耗采集
+  menu_metrics: 顶栏监控项目
+  metric_hint: 调整显示开关、样式、颜色和排列顺序，不创建额外采集器。
+  move_up: 上移{{name}}
+  move_down: 下移{{name}}
+  display_style: 显示样式
+  color: 指标颜色
+  alerts: 提醒规则
+  comparison: 比较方式
+  threshold: 阈值
+  sustain: 持续秒数
+  above: 高于
+  below: 低于
+  ThreeFingerDrag: 三指拖拽
+  ThreeFingerDragButton: 拖拽按键
+  FourFingerGestures: 自定义四指窗口总览
+  four_finger_hint: 保持关闭可沿用 Windows 手势。打开此页面不会自动开启总览。
+  tracking: 统一跟踪
+  tracking_description: 只有这一处速度与加速入口，复用原组件的 Windows 后端。读取不改设置，旧设备增益参数保留。
+  tracking_speed: 跟踪速度
+  tracking_failed: 无法核验 Windows 跟踪设置
+  acceleration: 指针加速
+  acceleration_confirm: 更改共用的指针加速？
+  acceleration_warning: 这会同时影响 Windows 鼠标与触控板加速，保存前需要单独确认；只调整速度不会改动加速状态。
+  advanced: 手势阈值
+  ThreeFingerDragStartThreshold: 起拖阈值
+  FourFingerSwipeThreshold: 四指触发距离
+  Language: 触控板组件语言
+  system: 跟随系统
+  RecordLogs: 记录触控板诊断日志
+  logging_description: 日志仅留在本机，不自动上传。
+  styles:
+    stacked: 名称与数值
+    inline: 单行
+    value: 仅数值
+    chart: 图表
+  buttons:
+    none: 不按键
+    left: 左键
+    right: 右键
+    middle: 中键
+  metrics:
+    cpu: CPU 使用率
+    gpu: GPU 使用率
+    ram: 内存
+    power: 传感器
+    cpu_temp: CPU 温度
+    cpu_freq: CPU 频率
+    gpu_temp: GPU 温度
+    gpu_power: GPU 功耗
+    gpu_memory: 显存
+    disk: 磁盘
+    network_down: 下载
+    network_up: 上传
+    battery: 电池
+    bluetooth: 蓝牙
+desktop_suite:
+  replace_taskbar: 替代 Windows 任务栏
+  taskbar_active: Windows 原任务栏已隐藏，显示模式统一在 Dock 设置中调整。
+  taskbar_recovery: 启用 Dock 后替代 Windows 任务栏；关闭 Dock、界面不可用或退出套件时恢复原任务栏。
+  taskbar_visibility: 显示模式
+  taskbar_always: 始终显示
+  taskbar_autohide: 自动隐藏
+  taskbar_visibility_description: 两种模式下 Windows 原任务栏都保持隐藏。自动隐藏时触碰屏幕边缘唤出 Dock；关闭 Dock 或退出套件时，恢复原任务栏及其原设置。
+  host: Seelen 桌面套件
+  host_description: Seelen 是主程序。Stats 与触控板是可选组件，默认随主程序一起启动。
+  startup_description: 只保留一个登录启动入口，启动 Seelen 及下方已开启的组件。
+  configure: 配置
+  running: 正在运行 · 随 Seelen 启动
+  not_running: 已开启但未运行，可点击重试启动。
+  component_failed: 操作未确认完成，请检查后重试；没有强制结束进程。
+  stats_disabled: 已关闭 · 顶栏监控区完全留空，原监控配置保留。
+  touchpad_disabled: 已关闭 · 停止自定义手势，原触控板配置保留。
+  quit: 退出整个套件
+  quit_description: 正常退出 Seelen、Stats 和触控板。下次启动 Seelen 时，仅恢复已开启的组件。
+  title: 桌面套件
+  about: 关于
+  upstream_version: 基于 Seelen UI 2.8.8 的本机修改版，保留原有版权与许可。
+  local_development: 本机开发版
+  development_policy: 不使用官方 Seelen 登录、云同步、统计上报或自动更新。原生任务栏替代需明确开启，并具备自动恢复保护。
+  startup_unavailable: 开发版不创建登录任务，现有已安装模块的自启设置保持不变。
+  stats: 系统监控
+  stats_description: 在当前窗口配置监控，保留唯一的监控采集器。
+  touchpad: 触控板
+  touchpad_description: 在当前窗口配置触控板手势，沿用既有统一跟踪来源。
+  activity_monitor: 活动监视器
+  activity_monitor_description: 独立打开已安装的进程监控工具。
+  weg: Dock
+  weg_description: 配置 Seelen 原生 Dock、固定应用与运行窗口。
+  toolbar: 菜单栏
+  toolbar_description: 配置 Seelen 顶部菜单栏与系统控件。
+  checking: 检查中
+  retry: 重试
+  unavailable: 不可用
+  open_failed: 无法打开模块，请检查安装状态后重试。
+  upstream: 基于 Seelen UI · AGPL-3.0
+  integration_boundary: Seelen 统一管理启动与退出；Stats 负责监控，触控板组件负责输入，Activity Monitor 按需独立打开。
 action:
   confirm: 确定？
   confirm_body: 此操作无法撤销。

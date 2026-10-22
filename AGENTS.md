@@ -2,6 +2,17 @@
 
 Guidance for AI agents working in this repository.
 
+## This fork
+
+This is Cooperiano's experimental desktop-suite adaptation, not an official
+Seelen release. Read `documentation/SOURCES-AND-CONTRIBUTIONS.md` and
+`documentation/VERIFICATION.md`. Preserve upstream attribution and license.
+Use the `desktop-suite` feature and isolated suite config for this adaptation.
+Never commit settings, runtime logs, dumps, credentials, signing keys or local
+handoffs. Do not re-enable archived upstream publishing workflows as part of
+source iteration. External Stats and Touchpad sources are not bundled here;
+do not claim that the complete assembled suite builds from this repository.
+
 Seelen UI is a customizable Windows desktop environment built with:
 
 - Rust + Tauri (backend)

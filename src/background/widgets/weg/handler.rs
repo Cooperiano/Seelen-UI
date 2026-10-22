@@ -15,6 +15,10 @@ use windows::Win32::{
 };
 
 impl crate::tauri_handlers::Handlers {
+    pub async fn get_weg_app_sessions() -> Vec<seelen_core::system_state::UserAppWindow> {
+        if !slu_ipc::identity::SUITE_BUILD { return Vec::new(); }
+        tokio::task::spawn_blocking(crate::modules::desktop_suite::app_sessions::snapshot).await.unwrap_or_default()
+    }
     pub fn weg_close_app(webview: tauri::WebviewWindow, hwnd: isize) -> Result<()> {
         request_widget_permission(&webview, WidgetPerm::ManageAppWindows)?;
         let window = Window::from(hwnd);

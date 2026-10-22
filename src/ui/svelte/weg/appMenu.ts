@@ -5,6 +5,9 @@ import { dockStateActions } from "./state/items.svelte.ts";
 import { fullSettings } from "./state/settings.svelte.ts";
 import { iconPackManager } from "libs/ui/svelte/components/Icon/index.ts";
 import { prefersDarkColorScheme } from "libs/ui/svelte/runes/DarkMode.svelte.ts";
+import { canLaunchDockApplication } from "./domain/applicationIdentity.ts";
+import { appSessions } from "./state/getters.svelte.ts";
+import { getWindowsForItem } from "./state/windows.svelte.ts";
 
 const identifier = crypto.randomUUID();
 const onAppMenuClick = "weg::app_menu_click";
@@ -19,7 +22,7 @@ Widget.self.webview.listen(onAppMenuClick, ({ payload }) => {
   if (!item) return;
 
   if (key === "unpin") {
-    if (windows.length) {
+    if (windows.length || getWindowsForItem(item, appSessions.value).length) {
       dockStateActions.unpinApp(item.id);
     } else {
       dockStateActions.remove(item.id);
@@ -83,7 +86,7 @@ export function getUserApplicationContextMenu(
   const foundIcon = iconPackManager.value.getIcon({ path: item.path, umid: item.umid });
   const iconSrc = (prefersDarkColorScheme.value ? foundIcon?.dark : foundIcon?.light) || foundIcon?.base;
 
-  items.push(
+  if (canLaunchDockApplication(item)) items.push(
     {
       type: "Item",
       key: "run",
@@ -153,7 +156,8 @@ export function getUserApplicationContextMenu(
 }
 
 export function launchItem(item: AppOrFileWegItem, elevated: boolean) {
-  if (item.relaunch) {
+  if (!canLaunchDockApplication(item)) return;
+  if (item.relaunch?.command) {
     return invoke(SeelenCommand.Run, {
       program: item.relaunch.command,
       args: item.relaunch.args,

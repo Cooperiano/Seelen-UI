@@ -30,7 +30,7 @@ impl IPC for ServiceIpc {
 impl ServiceIpc {
     /// Constructs the pipe path for a specific session ID
     pub fn path_with_session(session_id: u32) -> String {
-        format!(r"\\.\pipe\seelen-ui-service-{}", session_id)
+        format!(r"\\.\pipe\{}-{}", crate::identity::SERVICE_PIPE, session_id)
     }
 }
 

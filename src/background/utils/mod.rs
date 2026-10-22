@@ -1,4 +1,5 @@
 pub mod constants;
+pub mod desktop_suite;
 pub mod discord;
 pub mod icon_extractor;
 pub mod integrity;

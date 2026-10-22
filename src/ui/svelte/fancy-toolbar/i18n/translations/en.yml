@@ -1,3 +1,7 @@
+suite:
+  metric_details: Open Stats details
+  stats_unavailable: Stats data unavailable. Check that Stats is running.
+  input_mode: Input language and Chinese/English mode
 battery:
   remaining: '{{0}}% Remaining'
   smart_charge: Smart Charge

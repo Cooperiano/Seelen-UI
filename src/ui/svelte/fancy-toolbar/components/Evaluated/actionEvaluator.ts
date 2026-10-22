@@ -43,7 +43,7 @@ export function evalActionSanboxed(
   });
 }
 
-function triggerWidget(widgetId: WidgetId, itemId: string): void {
+export function triggerWidget(widgetId: WidgetId, itemId: string): void {
   if (typeof widgetId !== "string") {
     return;
   }

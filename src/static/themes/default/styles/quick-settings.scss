@@ -2,6 +2,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  width: 340px;
+  // This popup sizes its native viewport from root.scrollWidth. Using vw here
+  // would feed that viewport back into its own width and collapse the window.
+  min-width: 340px;
+  max-width: none;
+
+  .quick-settings-heading { font-size: 0.9rem; font-weight: 600; padding: var(--spacing-2xs); }
+  .quick-settings-label { color: var(--slu-std-fg-secondary-color); font-weight: 500; }
+  .quick-settings-percentage { font-variant-numeric: tabular-nums; text-align: right; }
 
   .radio-buttons-container {
     display: grid;
@@ -19,10 +28,10 @@
       border-radius: var(--radius-m);
 
       transition: all 0.2s ease;
-      min-height: 80px;
+      min-height: 64px;
 
       .svg-icon {
-        height: 2rem;
+        height: 1.5rem;
       }
 
       .radio-button-label {

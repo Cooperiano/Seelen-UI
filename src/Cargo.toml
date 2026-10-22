@@ -191,6 +191,9 @@ futures = { workspace = true }
 salvo = { workspace = true, features = ["oapi"] }
 
 [features]
+desktop-suite = ["slu-ipc/desktop-suite"]
+# Opt-in only after native shell replacement and recovery acceptance.
+native-shell-takeover = []
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.
 # If you use cargo directly instead of tauri's cli you can use this feature flag to switch between tauri's `dev` and `build` modes.
 custom-protocol = ["tauri/custom-protocol"]

@@ -124,6 +124,21 @@ macro_rules! slu_commands_declaration {
 }
 
 slu_commands_declaration! {
+    IsDesktopSuite = is_desktop_suite() -> bool,
+    GetDesktopSuiteMetrics = get_desktop_suite_metrics() -> Option<serde_json::Value>,
+    GetDesktopSuiteState = @async() @fallible() get_desktop_suite_state() -> serde_json::Value,
+    SetDesktopSuiteTaskbar = @webview() @fallible() set_desktop_suite_taskbar(enabled: bool),
+    DesktopSuiteTaskbarHeartbeat = @webview() @fallible() desktop_suite_taskbar_heartbeat(ready: bool),
+    GetDesktopSuitePreferences = @webview() @async() @fallible() get_desktop_suite_preferences(module: String) -> serde_json::Value,
+    SaveDesktopSuitePreferences = @webview() @async() @fallible() save_desktop_suite_preferences(module: String, revision: String, patch: serde_json::Value) -> serde_json::Value,
+    GetDesktopSuiteTracking = @webview() @async() @fallible() get_desktop_suite_tracking() -> serde_json::Value,
+    SaveDesktopSuiteTracking = @webview() @async() @fallible() save_desktop_suite_tracking(expected: serde_json::Value, desired: serde_json::Value, confirmed: bool) -> serde_json::Value,
+    SetDesktopSuiteComponent = @webview() @async() @fallible() set_desktop_suite_component(module: String, enabled: bool),
+    ExitDesktopSuite = @webview() @async() @fallible() exit_desktop_suite(),
+    GetDesktopSuiteInput = @async() get_desktop_suite_input() -> String,
+    OpenDesktopSuiteMetric = @webview() @fallible() open_desktop_suite_metric(id: u32, rect: Vec<i32>),
+    GetDesktopSuiteModules = @fallible() get_desktop_suite_modules() -> Vec<String>,
+    OpenDesktopSuiteModule = @webview() @fallible() open_desktop_suite_module(module: String),
     // virtual desktops
     StateGetVirtualDesktops = get_virtual_desktops() -> VirtualDesktops,
     SwitchWorkspace =
@@ -444,6 +459,7 @@ slu_commands_declaration! {
         lock(),
 
     // SeelenWeg
+    GetWegAppSessions = @async() get_weg_app_sessions() -> Vec<UserAppWindow>,
     WegCloseApp =
         @webview()
         @fallible()

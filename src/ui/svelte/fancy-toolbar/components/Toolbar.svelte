@@ -23,6 +23,7 @@
   import ItemsGroup from "./ItemsGroup.svelte";
   import CornerAction from "./CornerAction.svelte";
   import Item from "./Item.svelte";
+  import { isDesktopSuite } from "../state/getters.svelte.ts";
 
   // Workaround for https://github.com/clauderic/dnd-kit/issues/2112
   const manager = createDragDropManager();
@@ -216,6 +217,7 @@
   role="toolbar"
   tabindex="0"
   class="ft-bar {settingsState.position.toLowerCase()}"
+  data-desktop-suite={isDesktopSuite}
   class:ft-bar-hidden={hiddenByAutohide.value}
   data-has-margin={!!settingsState.margin}
   data-there-is-maximized-on-background={windowsState.thereIsMaximizedOnBg}

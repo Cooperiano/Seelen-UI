@@ -25,8 +25,9 @@ impl SeelenLogger {
     const MAX_LOG_SIZE: u64 = 5 * 1024 * 1024; // 5MB
 
     pub fn init() -> Result<()> {
-        let logs_folder =
-            WindowsApi::known_folder(FOLDERID_LocalAppData)?.join("com.seelen.seelen-ui/logs");
+        let logs_folder = WindowsApi::known_folder(FOLDERID_LocalAppData)?
+            .join(slu_ipc::identity::APP_ID)
+            .join("logs");
         std::fs::create_dir_all(&logs_folder)?;
 
         let log_path = logs_folder.join("Seelen UI.log");

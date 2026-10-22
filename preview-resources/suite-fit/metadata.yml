@@ -1,0 +1,11 @@
+id: "@cooperiano/suite-fit"
+metadata:
+  displayName:
+    en: Stats Desktop Compact Toolbar
+    zh-CN: Stats Desktop 紧凑顶栏
+  description:
+    en: Compact metric line boxes for the local Seelen topbar preview.
+    zh-CN: 本机 Seelen 顶栏预览的紧凑指标排版。
+styles:
+  "@seelen/fancy-toolbar": !include toolbar.scss
+  "@seelen/quick-settings": !include quick-settings.scss

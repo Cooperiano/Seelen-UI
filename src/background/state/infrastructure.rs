@@ -48,6 +48,7 @@ impl crate::tauri_handlers::Handlers {
     pub fn state_get_default_settings() -> Result<Settings> {
         let mut settings = Settings::default();
         settings.sanitize()?;
+        super::application::AppSettings::normalize_suite_settings(&mut settings);
         Ok(settings)
     }
 
@@ -62,6 +63,7 @@ impl crate::tauri_handlers::Handlers {
     pub fn state_write_settings(webview: WebviewWindow, mut settings: Settings) -> Result<()> {
         request_widget_permission(&webview, WidgetPerm::ModifyConfiguration)?;
         settings.sanitize()?;
+        super::application::AppSettings::normalize_suite_settings(&mut settings);
         FULL_STATE.rcu(move |state| {
             let mut state = state.cloned();
             state.settings = settings.clone();

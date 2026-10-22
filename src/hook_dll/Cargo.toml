@@ -19,3 +19,6 @@ uuid = { workspace = true, features = ["serde"] }
 
 # Usamos la librería IPC del proyecto
 slu-ipc = { path = "../../libs/slu-ipc" }
+
+[features]
+desktop-suite = ["slu-ipc/desktop-suite"]

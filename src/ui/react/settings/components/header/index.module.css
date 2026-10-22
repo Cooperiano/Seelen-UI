@@ -43,4 +43,10 @@
     align-items: center;
     gap: var(--spacing-2xs);
   }
+
+  .saveStatus {
+    font-size: 0.8rem;
+    color: var(--color-gray-700);
+    &[data-error="true"] { color: var(--color-red-700); }
+  }
 }

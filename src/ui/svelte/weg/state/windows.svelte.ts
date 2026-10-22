@@ -3,6 +3,7 @@ import { type FocusedApp, SeelenWegSide, type UserAppWindow, type UserAppWindowC
 import { settingsState } from "./settings.svelte.ts";
 import { debounce } from "lodash";
 import type { AppOrFileWegItem } from "../types.ts";
+import { matchesDockApplication } from "../domain/applicationIdentity.ts";
 import { focused, interactables, previews, selfWinId, widgetStatuses, windowsColors } from "./getters.svelte.ts";
 
 export { focused, interactables, previews, widgetStatuses, windowsColors };
@@ -78,17 +79,9 @@ export const windowsState = new WindowsState();
 export function getWindowsForItem(
   item: AppOrFileWegItem,
   windows: UserAppWindow[],
+  inventory: UserAppWindow[] = windows,
 ): UserAppWindow[] {
-  const itemCommand = item.relaunch?.command.toLowerCase();
-  const itemPath = item.path.toLowerCase();
-
-  return windows.filter((w) => {
-    if (w.umid) {
-      return item.umid === w.umid;
-    }
-    const winPath = w.process.path?.toLowerCase() ?? "";
-    return winPath !== "" && (itemCommand === winPath || itemPath === winPath);
-  });
+  return windows.filter((w) => matchesDockApplication(item, w, inventory));
 }
 
 $effect.root(() => {

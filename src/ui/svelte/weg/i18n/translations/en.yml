@@ -6,12 +6,12 @@ app_menu:
   kill: Kill Process
   kill_multiple: Kill All Processes
   open_file_location: Open File Location
-  pin: Pin
+  pin: Keep in taskbar
   pin_to_center: Pin to Center
   pin_to_left: Pin to Left
   pin_to_right: Pin to Right
   run_as: Run as Administrator
-  unpin: Unpin
+  unpin: Remove from taskbar
 context_menu:
   edit_icon: Edit Icon
   remove_module: Remove Module

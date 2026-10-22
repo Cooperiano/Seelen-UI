@@ -3,10 +3,14 @@ import type { PluginId, WegItem, WegItems } from "@seelen-ui/lib/types";
 import { debounce } from "lodash";
 import { emit, listen } from "@tauri-apps/api/event";
 import type { AppOrFileWegItem, SeparatorWegItem } from "../types.ts";
-import { getWindowsForItem, interactables } from "./windows.svelte.ts";
+import { interactables } from "./windows.svelte.ts";
+import { appSessions } from "./getters.svelte.ts";
 import { plugins, wegItems } from "./getters.svelte.ts";
 import { isHorizontalDock } from "./settings.svelte.ts";
 import { stableUUID } from "libs/ui/utils.ts";
+import { runningApplicationKey } from "../domain/applicationIdentity.ts";
+import { reconcileApplications, mergeApplicationInPlace } from "../domain/reconcileApplications.ts";
+import { orderTaskbarSections } from "../domain/taskbarSections.ts";
 
 interface OptimisticDockState {
   isReorderDisabled: boolean;
@@ -53,13 +57,14 @@ function getStateFromStored(state: WegItems): OptimisticDockState {
 }
 
 let _dockState = $state(getStateFromStored(wegItems.value));
+const presentedItems = $derived(orderTaskbarSections(_dockState.items));
 
 export const dockState = {
   get isReorderDisabled() {
     return _dockState.isReorderDisabled;
   },
   get items() {
-    return _dockState.items;
+    return presentedItems;
   },
   get state() {
     return _dockState;
@@ -68,7 +73,7 @@ export const dockState = {
     _dockState = value;
   },
   set items(value: WegItem[]) {
-    _dockState = { ..._dockState, items: value };
+    _dockState = { ..._dockState, items: orderTaskbarSections(value) };
   },
 };
 
@@ -80,6 +85,13 @@ subscribe(SeelenEvent.WegAddItem, (e) => {
   };
 
   const items = [..._dockState.items];
+  const apps = items.filter((i): i is AppOrFileWegItem => i.type === "AppOrFile");
+  const merged = mergeApplicationInPlace(apps, item as AppOrFileWegItem, interactables.value);
+  if (merged.length === apps.length) {
+    const byId = new Map(merged.map(i => [i.id, i]));
+    _dockState = { ..._dockState, items: items.map(i => byId.get(i.id) ?? i) };
+    return;
+  }
   const separatorIdx = items.findIndex((i) => i.id === HARDCODED_SEPARATOR_RIGHT.id);
   items.splice(separatorIdx, 0, item);
   _dockState = { ..._dockState, items };
@@ -125,7 +137,10 @@ const saveDockState = debounce(async (state: OptimisticDockState) => {
   await invoke(SeelenCommand.StateWriteWegItems, {
     items: {
       isReorderDisabled: state.isReorderDisabled,
-      ...listToGroups(state.items),
+      // Unknown executable identities are live-window placeholders, not saved launch targets.
+      ...listToGroups(
+        orderTaskbarSections(state.items).filter((item) => item.type !== "AppOrFile" || !(item as AppOrFileWegItem).sessionWindow),
+      ),
     },
   });
 }, 1000);
@@ -160,7 +175,11 @@ export const dockStateActions = {
   pinApp(id: string) {
     _dockState = {
       ..._dockState,
-      items: _dockState.items.map((item) => (item.id === id ? { ...item, pinned: true } : item)),
+      items: _dockState.items.map((item) =>
+        item.id === id && item.type === "AppOrFile" && !item.preventPinning && !(item as AppOrFileWegItem).sessionWindow
+          ? { ...item, pinned: true }
+          : item
+      ),
     };
   },
   unpinApp(id: string) {
@@ -263,35 +282,26 @@ $effect.root(() => {
       (item): item is AppOrFileWegItem => item.type === "AppOrFile",
     );
 
-    const itemsToRemove = new Set(
-      appOrFileItems
-        .filter((item) => !item.pinned && getWindowsForItem(item, windows).length === 0)
-        .map((item) => item.id),
-    );
-
-    const remainingItems = appOrFileItems.filter((item) => !itemsToRemove.has(item.id));
-    const uncoveredWindows = windows.filter(
-      (w) => !remainingItems.some((item) => getWindowsForItem(item, [w]).length > 0),
-    );
+    const { itemsToRemove, uncoveredWindows } = reconcileApplications(appOrFileItems, windows, appSessions.value);
 
     const seen = new Set<string>();
     const newItems: AppOrFileWegItem[] = [];
 
     for (const w of uncoveredWindows) {
-      const key = w.umid ?? w.process.path?.toString();
-      if (!key) continue;
+      const key = runningApplicationKey(w);
       if (seen.has(key)) continue;
       seen.add(key);
 
       newItems.push({
         id: stableUUID(key),
         type: "AppOrFile",
-        displayName: w.appName,
+        displayName: w.appName || w.title,
         umid: w.umid ?? null,
         path: w.process.path?.toString() ?? "",
         pinned: false,
-        preventPinning: w.preventPinning,
+        preventPinning: w.preventPinning || (!w.umid && !w.process.path),
         relaunch: w.relaunch ?? null,
+        ...(!w.umid && !w.process.path ? { sessionWindow: { hwnd: w.hwnd, pid: w.process.id } } : {}),
       });
     }
 

@@ -2,6 +2,9 @@
   import type { ToolbarItem, ToolbarItem2 } from "@seelen-ui/lib/types";
   import { plugins } from "../state/items.svelte.ts";
   import SortableItem from "./SortableItem.svelte";
+  import { isDesktopSuite } from "../state/getters.svelte.ts";
+  import SuiteMetrics from "./SuiteMetrics.svelte";
+  import SuiteInput from "./SuiteInput.svelte";
 
   interface Props {
     placement: string;
@@ -35,6 +38,10 @@
 </script>
 
 <div class="ft-bar-container ft-bar-{placement}">
+  {#if isDesktopSuite && placement === "right"}
+    <SuiteMetrics />
+    <SuiteInput />
+  {/if}
   {#each entries as entry (entry.item.id)}
     <SortableItem module={entry.item} index={entry.index} pluginId={entry.pluginId} {placement} />
   {/each}

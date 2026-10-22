@@ -1,5 +1,5 @@
 import { invoke, PluginList, SeelenCommand, SeelenEvent, Settings, subscribe, Widget } from "@seelen-ui/lib";
-import type { UserAppWindowColors } from "@seelen-ui/lib/types";
+import type { UserAppWindow, UserAppWindowColors } from "@seelen-ui/lib/types";
 import { lazyRune } from "libs/ui/svelte/utils";
 
 export const currentMonitorId = Widget.getCurrent().decoded.monitorId!;
@@ -32,6 +32,16 @@ export const selfWinId = lazyRune(() => invoke(SeelenCommand.GetSelfWindowId));
 export const interactables = lazyRune(() => invoke(SeelenCommand.GetUserAppWindows));
 subscribe(SeelenEvent.UserAppWindowsChanged, interactables.setByPayload);
 
+export const appSessions = lazyRune<UserAppWindow[]>(() => invoke(SeelenCommand.GetWegAppSessions));
+let sessionPoll: ReturnType<typeof setTimeout>;
+async function pollSessions() {
+  try { appSessions.value = await invoke(SeelenCommand.GetWegAppSessions); }
+  catch { /* Keep last known state on IPC failure; never invent a process exit. */ }
+  sessionPoll = setTimeout(pollSessions, 1000);
+}
+void pollSessions();
+globalThis.addEventListener("pagehide", () => clearTimeout(sessionPoll), { once: true });
+
 export const previews = lazyRune(() => invoke(SeelenCommand.GetUserAppWindowsPreviews));
 subscribe(SeelenEvent.UserAppWindowsPreviewsChanged, previews.setByPayload);
 
@@ -61,6 +71,7 @@ await Promise.all([
   settings.init(),
   selfWinId.init(),
   interactables.init(),
+  appSessions.init(),
   previews.init(),
   windowsColors.init(),
   focused.init(),

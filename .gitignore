@@ -18,3 +18,21 @@ rustc-ice-*.txt
 CLAUDE.md
 GEMINI.md
 .claude
+
+# Private runtime, signing and delivery state
+*.pfx
+*.p12
+*.key
+*.dmp
+*.pdb
+*.log
+*.msix
+*.msixbundle
+.env.*
+!.env.example
+/work/
+/local-artifacts/
+/TestResults/
+/tests/*.exe
+/tests/*.dll
+/tests/*/target/

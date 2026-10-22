@@ -13,6 +13,7 @@ import cs from "./index.module.css";
 import { resourcesWithUpdate, themes, widgets } from "../../state/resources.ts";
 import { settings } from "../../state/mod.ts";
 import { session } from "../../state/session.ts";
+import { suiteDevelopmentBuild } from "../../state/desktopSuite.ts";
 
 export const Navigation = memo(() => {
   const [collapsed, setCollapsed] = useState(false);
@@ -57,8 +58,7 @@ export const Navigation = memo(() => {
       })}
     >
       <div className={cs.header} onClick={() => setCollapsed(!collapsed)}>
-        <img src="./logo.svg" />
-        <h1>Seelen UI</h1>
+        <h1>{suiteDevelopmentBuild ? "Seelen" : "Seelen UI"}</h1>
         <Icon className={cs.chevron} iconName="FaChevronLeft" />
       </div>
 
@@ -67,11 +67,15 @@ export const Navigation = memo(() => {
           <Item
             route={RoutePath.Home}
             isActive={location.pathname === "/"}
-            label={t("header.labels.home")}
+            label={t("desktop_suite.title")}
             icon={<Icon iconName="TbHome" />}
             collapsed={collapsed}
           />
           {[RoutePath.General, RoutePath.Resource].map(Mapper)}
+          {suiteDevelopmentBuild && [RoutePath.Stats, RoutePath.Touchpad].map((route) => <Item
+            key={route} route={route} isActive={location.pathname === route} collapsed={collapsed}
+            label={t(route === RoutePath.Stats ? "desktop_suite.stats" : "desktop_suite.touchpad")}
+            icon={RouteIcons[route]} />)}
         </div>
 
         <div className={cs.separator} />
@@ -124,7 +128,17 @@ export const Navigation = memo(() => {
       </div>
 
       <div className={cs.footer}>
-        <SessionAvatar collapsed={collapsed} isActive={location.pathname === RoutePath.Extras} />
+        {suiteDevelopmentBuild
+          ? (
+            <Item
+              route={RoutePath.Extras}
+              isActive={location.pathname === RoutePath.Extras}
+              label={t("desktop_suite.about")}
+              icon={<Icon iconName="PiInfoFill" />}
+              collapsed={collapsed}
+            />
+          )
+          : <SessionAvatar collapsed={collapsed} isActive={location.pathname === RoutePath.Extras} />}
       </div>
     </div>
   );

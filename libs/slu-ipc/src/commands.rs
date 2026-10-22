@@ -32,6 +32,49 @@ pub struct AppCli {
 
 #[derive(Debug, Serialize, Deserialize, clap::Subcommand)]
 pub enum AppCommand {
+    /// Gracefully close only the isolated local suite preview.
+    #[cfg(feature = "desktop-suite")]
+    SuiteExit,
+    /// Inspect installed optional components (writes a local diagnostic snapshot).
+    #[cfg(feature = "desktop-suite")]
+    SuiteStatus,
+    #[cfg(feature = "desktop-suite")]
+    SuiteTaskbarSessions,
+    /// Explicit one-time native pin/order migration (never replayed at startup).
+    #[cfg(feature = "desktop-suite")]
+    SuiteTaskbarMigrate,
+    /// Read a full Shell pin inventory without modifying either taskbar.
+    #[cfg(feature = "desktop-suite")]
+    SuiteTaskbarPins,
+    #[cfg(feature = "desktop-suite")]
+    SuiteTaskbar {
+        #[arg(action = clap::ArgAction::Set)]
+        enabled: bool,
+    },
+    /// Inspect or explicitly patch component preferences through the same manager.
+    #[cfg(feature = "desktop-suite")]
+    SuitePreferences {
+        #[arg(value_parser = ["stats", "touchpad"])]
+        module: String,
+        #[arg(long, requires = "revision")]
+        patch: Option<String>,
+        #[arg(long, requires = "patch")]
+        revision: Option<String>,
+    },
+    /// Open a component page in the existing primary settings window.
+    #[cfg(feature = "desktop-suite")]
+    SuiteSettings {
+        #[arg(value_parser = ["stats", "touchpad"])]
+        module: String,
+    },
+    /// Enable or disable an optional component through the primary host.
+    #[cfg(feature = "desktop-suite")]
+    SuiteComponent {
+        #[arg(value_parser = ["stats", "touchpad"])]
+        module: String,
+        #[arg(action = clap::ArgAction::Set)]
+        enabled: bool,
+    },
     /// Opens the Seelen settings gui.
     Settings,
     VirtualDesk(VirtualDesktopCli),

@@ -2,6 +2,7 @@ pub mod app;
 pub mod commands;
 pub mod common;
 pub mod error;
+pub mod identity;
 pub mod messages;
 pub mod security;
 pub mod service;

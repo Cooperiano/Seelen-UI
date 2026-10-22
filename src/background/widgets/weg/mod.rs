@@ -1,7 +1,10 @@
 pub mod cli;
 pub mod handler;
 pub mod hook;
+pub(crate) mod identity;
 pub mod native_taskbar;
+pub(crate) mod native_order;
+mod native_pins;
 
 use slu_ipc::messages::SvcAction;
 
@@ -14,6 +17,9 @@ pub static TASKBAR_CLASS: [&str; 2] = ["Shell_TrayWnd", "Shell_SecondaryTrayWnd"
 pub struct SeelenWeg {}
 
 impl SeelenWeg {
+    pub fn native_shell_takeover_enabled() -> bool {
+        !slu_ipc::identity::SUITE_BUILD || cfg!(feature = "native-shell-takeover")
+    }
     #[allow(dead_code)]
     pub fn get_weg_size_on_monitor(monitor: &Monitor) -> Result<i32> {
         let state = FULL_STATE.load();
@@ -32,10 +38,16 @@ impl SeelenWeg {
     // requests the action via IPC.
 
     pub fn hide_native_taskbar() {
+        if !Self::native_shell_takeover_enabled() {
+            return;
+        }
         let _ = ServicePipe::request(SvcAction::HideNativeTaskbar);
     }
 
     pub fn restore_native_taskbar() -> Result<()> {
+        if !Self::native_shell_takeover_enabled() {
+            return Ok(());
+        }
         ServicePipe::request(SvcAction::RestoreNativeTaskbar)
     }
 }

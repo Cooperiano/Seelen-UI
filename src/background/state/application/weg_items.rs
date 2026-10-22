@@ -27,6 +27,64 @@ pub struct WegItemsManager {
 }
 
 impl WegItemsManager {
+    /// Explicit one-time native-order migration, never called by normal startup.
+    /// The durable receipt is created BEFORE state replacement. Even interruption
+    /// or a failed completion receipt blocks replay over a later user reorder.
+    #[cfg(feature = "desktop-suite")]
+    pub fn migrate_native_order_once(&self) -> Result<usize> {
+        use crate::widgets::weg::{identity::matches_application, native_order::{may_migrate, plan_order}};
+        let dir = SEELEN_COMMON.widget_data_dir(&WidgetId::known_weg());
+        let receipt = dir.join("native-order-v1.json");
+        let mut guard = self.items.lock();
+        if !may_migrate(receipt.exists()) { return Ok(0); }
+        let native = get_windows_taskbar_pinned_apps()?;
+        if native.is_empty() { return Err("Native pin list is empty; nothing migrated".into()); }
+        let existing: Vec<_> = guard.left.iter().chain(&guard.center).chain(&guard.right)
+            .filter_map(|i| if let WegItem::AppOrFile(app) = i { Some(app) } else { None }).collect();
+        let target = |app: &WegItemData| app.relaunch.as_ref().map(|r| r.command.clone())
+            .unwrap_or_else(|| app.path.to_string_lossy().into_owned());
+        let inventory: Vec<_> = native.iter().map(|app| (app.umid.as_deref(), target(app))).collect();
+        let plan = plan_order(native.len(), existing.len(), |n,e| {
+            let old=existing[e]; let new=&native[n];
+            matches_application(old.umid.as_deref(), &old.path.to_string_lossy(),
+                old.relaunch.as_ref().map(|r|r.command.as_str()), new.umid.as_deref(), &target(new), &inventory)
+        }).map_err(crate::error::AppError::from)?;
+        let mut migrated = guard.clone();
+        let mut consumed = std::collections::HashSet::new();
+        let mut ordered = Vec::new();
+        for (new, prior) in native.iter().zip(plan) {
+            let mut app = new.clone();
+            if let Some(index) = prior { app.id = existing[index].id; consumed.insert(app.id); }
+            ordered.push(WegItem::AppOrFile(app));
+        }
+        let keep = |entry: &WegItem| !consumed.contains(entry.id());
+        migrated.left.retain(keep);
+        migrated.center.retain(keep);
+        migrated.right.retain(keep);
+        ordered.append(&mut migrated.center);
+        migrated.center = ordered;
+        migrated.sanitize();
+        let actual: Vec<_> = migrated.center.iter().filter_map(|i| if let WegItem::AppOrFile(a)=i {Some(a)} else {None}).take(native.len()).collect();
+        if actual.len()!=native.len() || actual.iter().zip(&native).any(|(a,n)| a.umid!=n.umid || a.path!=n.path || !a.pinned) {
+            return Err("Native pin validation failed; original order retained".into());
+        }
+        let path = dir.join("state.yml");
+        let original = std::fs::read(&path)?;
+        let backup = dir.join(format!("before-native-order-{}.yml", Uuid::new_v4()));
+        atomic_write_file(&backup, &original)?;
+        // This marker is never removed automatically. Pending means inspect the
+        // backup/state, not retry and risk overwriting the user's latest changes.
+        atomic_write_file(&receipt, &serde_json::to_vec_pretty(&serde_json::json!({
+            "version":1,"status":"prepared","count":native.len(),"backup":backup,
+        }))?)?;
+        atomic_write_file(&path, serde_yaml::to_string(&migrated)?.as_bytes())?;
+        *guard = migrated;
+        atomic_write_file(&receipt, &serde_json::to_vec_pretty(&serde_json::json!({
+            "version":1,"status":"complete","count":native.len(),"backup":backup,
+        }))?)?;
+        Ok(native.len())
+    }
+
     pub fn get(&self) -> WegItems {
         self.items.lock().clone()
     }
@@ -123,23 +181,17 @@ impl WegItemsManager {
 
         let mut items = self.get();
 
-        // Helper function to filter out AppOrFile items, keeping only non-app items
-        let keep_non_app_items = |items: &[WegItem]| -> Vec<WegItem> {
-            items
-                .iter()
-                .filter(|item| !matches!(item, WegItem::AppOrFile(_)))
-                .cloned()
-                .collect()
-        };
-
-        // Clear all AppOrFile items from all sections, keep only special items
-        items.left = keep_non_app_items(&items.left);
-        items.right = keep_non_app_items(&items.right);
-
-        // Add all imported items to center, after existing non-app items
-        items.center = keep_non_app_items(&items.center);
+        // Explicit import is additive: matching apps keep their ID and user-chosen slot.
+        let inventory:Vec<_>=windows_pinned_items.iter().map(|w|(w.umid.as_deref(),w.path.to_string_lossy().into_owned())).collect();
         for windows_item in &windows_pinned_items {
-            items.center.push(WegItem::AppOrFile(windows_item.clone()));
+            let found=items.left.iter_mut().chain(items.center.iter_mut()).chain(items.right.iter_mut()).find_map(|entry| {
+                let WegItem::AppOrFile(existing)=entry else {return None};
+                crate::widgets::weg::identity::matches_application(existing.umid.as_deref(),&existing.path.to_string_lossy(),
+                    existing.relaunch.as_ref().map(|r|r.command.as_str()),windows_item.umid.as_deref(),
+                    &windows_item.path.to_string_lossy(),&inventory).then_some(existing)
+            });
+            if let Some(existing)=found {existing.pinned=true;}
+            else {items.center.push(WegItem::AppOrFile(windows_item.clone()));}
         }
 
         self.write(items)?;

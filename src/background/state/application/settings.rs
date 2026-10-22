@@ -18,6 +18,11 @@ use crate::{
 use super::AppSettings;
 
 impl AppSettings {
+    pub fn normalize_suite_settings(settings: &mut Settings) {
+        if slu_ipc::identity::SUITE_BUILD && settings.by_widget.weg.hide_mode == seelen_core::state::HideMode::OnOverlap {
+            settings.by_widget.weg.hide_mode=seelen_core::state::HideMode::Always;
+        }
+    }
     pub(super) fn emit_settings(&self) -> Result<()> {
         emit_to_webviews(SeelenEvent::StateSettingsChanged, &self.settings);
         SeelenUI::on_settings_change(self)?;
@@ -30,14 +35,29 @@ impl AppSettings {
         let path = SEELEN_COMMON.settings_path();
         if path.exists() {
             match Settings::load(path) {
-                Ok(settings) => return settings,
+                Ok(mut settings) => {
+                    Self::normalize_suite_settings(&mut settings);
+                    return settings;
+                },
                 Err(err) => {
                     log::error!("Failed to read settings: {err}");
                     show_corrupted_state_to_user(SEELEN_COMMON.settings_path());
                 }
             }
         }
-        Settings::default()
+        let mut settings = Settings::default();
+        if slu_ipc::identity::SUITE_BUILD {
+            // Isolated, topbar-only test profile. Never change the upstream user's profile.
+            settings.by_widget.weg.enabled = false;
+            settings.by_widget.wm.enabled = false;
+            settings.by_widget.wall.enabled = false;
+            settings.by_widget.fancy_toolbar.padding = 6;
+            for id in ["@seelen/apps-menu", "@seelen/flyouts", "@seelen/notifications", "@seelen/task-switcher", "@seelen/workspaces-viewer"] {
+                settings.by_widget.set_enabled(&id.into(), false);
+            }
+            settings.save(path).log_error();
+        }
+        settings
     }
 
     /// Resources id changed for remote/downloaded resources.

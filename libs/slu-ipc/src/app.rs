@@ -31,7 +31,7 @@ impl IPC for AppIpc {
 impl AppIpc {
     /// Constructs the pipe path for a specific session ID
     pub fn path_with_session(session_id: u32) -> String {
-        format!(r"\\.\pipe\seelen-ui-{}", session_id)
+        format!(r"\\.\pipe\{}-{}", crate::identity::APP_PIPE, session_id)
     }
 
     /// Starts the IPC listener on its own thread and runtime, fully independent from the caller's

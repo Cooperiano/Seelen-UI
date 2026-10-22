@@ -5,7 +5,7 @@ const GUIDS_TO_IGNORE = [
 ];
 
 const items = trayIcons
-  .filter((icon) => icon.isVisible && icon.isPromoted && !GUIDS_TO_IGNORE.includes(icon.guid))
+  .filter((icon) => icon.isVisible && (self.desktopSuite || icon.isPromoted) && !GUIDS_TO_IGNORE.includes(icon.guid))
   .map((icon) => {
     const onClick = `invoke(SeelenCommand.SendSystemTrayIconAction, {
         id: "${icon.registryKey}",
@@ -33,12 +33,16 @@ const items = trayIcons
     });
   });
 
-const OverflowButton = Button({
-  tooltip: "System Tray",
-  content: Icon({ name: "IoIosArrowDropdown" }),
-  onClick: `trigger("@seelen/system-tray");`,
-});
-items.push(OverflowButton);
+// The suite shows every registered visible app icon in place. Keep upstream's
+// manual pin/overflow behavior for non-suite profiles without changing Windows
+// promotion settings or maintaining another list of running applications.
+if (!self.desktopSuite) {
+  items.push(Button({
+    tooltip: "System Tray",
+    content: Icon({ name: "IoIosArrowDropdown" }),
+    onClick: `trigger("@seelen/system-tray");`,
+  }));
+}
 
 if (self.placement === "left") {
   items.reverse();

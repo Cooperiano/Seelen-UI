@@ -7,6 +7,7 @@ import { systemState } from "./system.svelte.ts";
 import { settings as _settings } from "./getters.svelte.ts";
 import { dateState } from "libs/ui/svelte/runes/date.svelte.ts";
 import { rootEffectAsync } from "libs/ui/svelte/utils/RootEffect.svelte.ts";
+import { dockReservation } from "../domain/dockReservation.ts";
 
 let isWidgetReady = $state(false);
 const settings = $derived(_settings.value.byWidget["@seelen/weg"]);
@@ -188,7 +189,7 @@ async function updateWidgetPosition() {
 
   if (hideMode === HideMode.Never || isTouch) {
     await invoke(SeelenCommand.RegisterAppBar, {
-      rect: hitboxRect,
+      rect: dockReservation(hitboxRect, position, settings.margin, systemState.currentMonitor.scaleFactor),
       edge: position as any,
     });
   } else {

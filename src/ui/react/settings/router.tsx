@@ -14,6 +14,8 @@ import { Home } from "./modules/Home/index.tsx";
 import { ThemeView } from "./modules/resources/Theme/View.tsx";
 import { SingleWallpaperView } from "./modules/resources/Wallpapers/View.tsx";
 import { WidgetView } from "./modules/resources/Widget/View.tsx";
+import { StatsPreferences, TouchpadPreferences } from "./modules/desktopSuite/ComponentPreferences.tsx";
+import { suiteDevelopmentBuild } from "./state/desktopSuite.ts";
 
 export function Routing() {
   return (
@@ -21,6 +23,8 @@ export function Routing() {
       <Route Component={Layout}>
         <Route index Component={Home} />
         <Route path={RoutePath.General} Component={General} />
+        {suiteDevelopmentBuild && <Route path={RoutePath.Stats} Component={StatsPreferences} />}
+        {suiteDevelopmentBuild && <Route path={RoutePath.Touchpad} Component={TouchpadPreferences} />}
         <Route path={RoutePath.Resource + "/*"} Component={ResourcesView} />
         <Route path={RoutePath.SettingsByMonitor} Component={SettingsByMonitor} />
         <Route path={RoutePath.Shortcuts} Component={Shortcuts} />

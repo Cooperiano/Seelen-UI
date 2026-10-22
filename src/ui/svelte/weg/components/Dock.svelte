@@ -7,6 +7,7 @@
   } from "@seelen-ui/lib/types";
   import { DragDropProvider, DragOverlay } from "@dnd-kit/svelte";
   import { move } from "@dnd-kit/helpers";
+  import type { DragStartEvent, DragOverEvent, DragEndEvent } from "@dnd-kit/abstract";
   import { onDestroy } from "svelte";
   import { BackgroundByLayers } from "libs/ui/svelte/components/BackgroundByLayers";
   import { t } from "../i18n/index.ts";
@@ -14,10 +15,12 @@
   import { settingsState } from "../state/settings.svelte.ts";
   import { systemState } from "../state/system.svelte.ts";
   import { interactables, getWindowsForItem } from "../state/windows.svelte.ts";
+  import { appSessions } from "../state/getters.svelte.ts";
   import { dockShouldBeHidden, setDockIsDraggingItem } from "../state/hidden.svelte.ts";
   import { getSeelenWegMenu } from "../dockMenu.ts";
   import { createDragDropManager } from "libs/ui/dnd.ts";
   import type { SwItem } from "../types.ts";
+  import { commitTaskbarDrop, TASKBAR_BOUNDARY, withTaskbarBoundary } from "../domain/taskbarDrop.ts";
   import DockItemsGroup from "./DockItemsGroup.svelte";
   import WegItemSwitch from "./WegItemSwitch.svelte";
 
@@ -27,8 +30,13 @@
 
   const settings = $derived(settingsState.value as any);
   const isHorizontal = $derived(settings?.position === "Top" || settings?.position === "Bottom");
+  let previewItems = $state<SwItem[] | null>(null);
+  let dragSourceId: string | null = null;
+  let taskbarElement: HTMLDivElement;
+  const displayedItems = $derived(previewItems ?? withTaskbarBoundary(dockState.items, false));
 
   function isItemVisible(item: SwItem): boolean {
+    if (item.id === TASKBAR_BOUNDARY) return true;
     const pinnedVisibility = settings?.pinnedItemsVisibility as WegPinnedItemsVisibility;
     const temporalVisibility = settings?.temporalItemsVisibility as WegTemporalItemsVisibility;
     const monitor = systemState.currentMonitor;
@@ -46,12 +54,13 @@
     if (item.pinned && showPinned) {
       return true;
     }
-    return getWindowsForItem(item as any, windows).length > 0;
+    return getWindowsForItem(item as any, windows, interactables.value).length > 0 ||
+      (!filterByMonitor && getWindowsForItem(item as any, appSessions.value).length > 0);
   }
 
   // splits the flat items array (left..., left-separator, center..., right-separator, ...right)
   // into their three groups, same as the toolbar does
-  const groupedItems = $derived(listToGroups(dockState.items, true));
+  const groupedItems = $derived(listToGroups(displayedItems, true));
   const visibleGroupedItems = $derived.by(() => ({
     left: groupedItems.left.filter(isItemVisible),
     center: groupedItems.center.filter(isItemVisible),
@@ -65,10 +74,9 @@
       ...visibleGroupedItems.right,
     ].filter((c) => c.type !== "Separator").length === 0,
   );
-
   const itemIndexById = $derived.by(() => {
     const map = new Map<string, number>();
-    dockState.items.forEach((item, i) => map.set(item.id, i));
+    displayedItems.forEach((item, i) => map.set(item.id, i));
     return map;
   });
 
@@ -82,22 +90,35 @@
     });
   }
 
-  function handleDragOver(event: any) {
-    const temp = dockState.items.map((item) => item.id);
-    const newIds = move(temp, event);
-    dockState.items = newIds.map((id) => dockState.items.find((item) => item.id === id)!);
+  function handleDragOver(event: DragOverEvent) {
+    if (!previewItems || dockState.isReorderDisabled) return;
+    // Preview only. Esc/outside drops must not write intermediate order or pin state.
+    previewItems = move(previewItems, event);
   }
 
-  function handleDragStart() {
+  function handleDragStart(event: DragStartEvent) {
+    dragSourceId = event.operation.source ? String(event.operation.source.id) : null;
+    previewItems = withTaskbarBoundary(dockState.items, true);
     setDockIsDraggingItem(true);
   }
 
-  function handleDragEnd() {
+  function handleDragEnd(event: DragEndEvent) {
+    const point = event.operation.position.current;
+    const rect = taskbarElement.getBoundingClientRect();
+    const inside = point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+    if (previewItems && dragSourceId && !dockState.isReorderDisabled) {
+      const accepted = !event.canceled && !event.operation.canceled && !!event.operation.target && inside;
+      const committed = commitTaskbarDrop(dockState.items, previewItems, dragSourceId, accepted);
+      if (accepted) dockState.items = committed;
+    }
+    previewItems = null;
+    dragSourceId = null;
     setDockIsDraggingItem(false);
   }
 </script>
 
 <div
+  bind:this={taskbarElement}
   role="toolbar"
   tabindex="0"
   data-has-margin={!!settings?.margin}
@@ -120,9 +141,9 @@
         {#if isEmpty}
           <span class="weg-empty-state-label">{$t("weg.empty")}</span>
         {:else}
-          <DockItemsGroup id="left" items={visibleGroupedItems.left} {itemIndexById} />
-          <DockItemsGroup id="center" items={visibleGroupedItems.center} {itemIndexById} />
-          <DockItemsGroup id="right" items={visibleGroupedItems.right} {itemIndexById} />
+          <DockItemsGroup id="left" items={visibleGroupedItems.left} {itemIndexById} dragging={previewItems !== null} />
+          <DockItemsGroup id="center" items={visibleGroupedItems.center} {itemIndexById} dragging={previewItems !== null} />
+          <DockItemsGroup id="right" items={visibleGroupedItems.right} {itemIndexById} dragging={previewItems !== null} />
         {/if}
       </div>
 

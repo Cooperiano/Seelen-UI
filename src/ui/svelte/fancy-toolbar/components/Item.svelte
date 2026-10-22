@@ -6,6 +6,7 @@
   import { evalActionSanboxed } from "./Evaluated/actionEvaluator.ts";
   import { getMenuForItem } from "../itemMenu.ts";
   import { settingsState } from "../state/settings.svelte.ts";
+  import { isDesktopSuite } from "../state/getters.svelte.ts";
   import { styleToString } from "../utils.ts";
   import { createRemoteDataResolver } from "../remoteData.svelte.ts";
   import { resolveScopes } from "libs/ui/svelte/utils/scopes.svelte.ts";
@@ -47,7 +48,7 @@
   const scope = $derived.by(() => ({
     ..._scopeResult.data,
     ...fetchedData,
-    self: { placement },
+    self: { placement, desktopSuite: isDesktopSuite },
     position: settingsState.position, // @deprecated remove after v3
     toolbar: { position: settingsState.position },
     t: (...args: [string, Record<string, string>]) => $t(...args),

@@ -11,6 +11,8 @@
   import { CssHandled } from "libs/ui/svelte/utils/animations.ts";
   import { getBadge } from "../../state/badge.svelte.ts";
   import Icon from "libs/ui/svelte/components/Icon/Icon.svelte";
+  import { appSessions } from "../../state/getters.svelte.ts";
+  import { getWindowsForItem } from "../../state/windows.svelte.ts";
 
   interface Props {
     item: AppOrFileWegItem;
@@ -27,6 +29,7 @@
     settings?.showWindowTitle && windows.length ? windows[0]!.title : null,
   );
   const isFocused = $derived(windows.some((w) => w.hwnd === focused.value?.hwnd));
+  const isApplicationRunning = $derived(windows.length > 0 || getWindowsForItem(item, appSessions.value).length > 0);
   const isFlashing = $derived(windows.some((w) => w.attention === WindowAttention.Flashing));
   const needsAttention = $derived(
     isFlashing || windows.some((w) => w.attention === WindowAttention.Highlighted),
@@ -75,6 +78,7 @@
 <div bind:this={itemEl} role="menu" tabindex="0" class="weg-item-overlay">
   <div
     role="menuitem"
+    aria-label={item.displayName}
     tabindex="0"
     class="weg-item"
     data-tooltip={item.displayName}
@@ -85,9 +89,18 @@
     onclick={onClick}
     onauxclick={onAuxClick}
     oncontextmenu={onContextMenu}
-    onkeypress={() => {}}
+    onkeydown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onClick();
+      }
+    }}
   >
-    <FileIcon class="weg-item-icon" path={item.relaunch?.icon || item.path} umid={item.umid} />
+    {#if item.sessionWindow}
+      <Icon class="weg-item-icon" name="TbAppWindow" />
+    {:else}
+      <FileIcon class="weg-item-icon" path={item.relaunch?.icon || item.path} umid={item.umid} />
+    {/if}
     {#if itemLabel}
       <div class="weg-item-title">{itemLabel}</div>
     {/if}
@@ -123,7 +136,7 @@
   {#if !settings?.showWindowTitle}
     <div
       class="weg-item-open-sign"
-      class:weg-item-open-sign-active={windows.length > 0}
+      class:weg-item-open-sign-active={isApplicationRunning}
       class:weg-item-open-sign-focused={isFocused}
       class:weg-item-open-sign-attention={needsAttention}
     ></div>

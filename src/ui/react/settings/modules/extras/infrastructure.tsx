@@ -22,6 +22,8 @@ import { SettingsGroup, SettingsOption, SettingsSubGroup } from "../../component
 import { UpdateChannel } from "@seelen-ui/lib/types";
 import { SessionView } from "./session/infra.tsx";
 import { session } from "../../state/session.ts";
+import { suiteDevelopmentBuild } from "../../state/desktopSuite.ts";
+import { SuiteInformation } from "../desktopSuite/About.tsx";
 
 const [isDevMode, isMsixBuild, isFixed] = await Promise.all([
   invoke(SeelenCommand.IsDevMode),
@@ -37,6 +39,8 @@ export function Information() {
   const backupStatus = $backupStatus.value;
 
   const { t } = useTranslation();
+
+  if (suiteDevelopmentBuild) return <SuiteInformation />;
 
   function onToggleDrpc(value: boolean) {
     setDrpc(value);

@@ -85,6 +85,24 @@
   }
 }
 
+// Automatic fixed / running-only boundary; not a draggable/saved user item.
+.weg-application-section-divider {
+  flex: 0 0 auto;
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    background: var(--slu-std-fg-muted-color);
+  }
+  .horizontal & { width: 1px; height: var(--config-item-size); }
+  .vertical & { height: 1px; width: var(--config-item-size); }
+  .horizontal &::after { width: 1px; height: 100%; left: 50%; }
+  .vertical &::after { height: 1px; width: 100%; top: 50%; }
+  // A usable drop slot remains even when dragging the first/last app across an empty region.
+  &[data-drop-active="true"] { width: var(--config-item-size); height: var(--config-item-size); }
+  &[data-drop-target="true"]::after { background: var(--slu-std-ui-color); }
+}
+
 .weg-empty-state-label {
   white-space: nowrap;
   width: min-content;

@@ -38,6 +38,9 @@ pub fn get_taskbars_handles() -> Result<Vec<HWND>> {
 }
 
 pub fn hide_native_taskbar() {
+    if slu_ipc::identity::SUITE_BUILD && !cfg!(feature = "native-shell-takeover") {
+        return;
+    }
     NATIVE_TASKBAR_HIDDEN.store(true, Ordering::Release);
     std::thread::spawn(|| match get_taskbars_handles() {
         Ok(handles) => {

@@ -97,7 +97,7 @@ pub fn setup() -> Result<()> {
 fn is_svc_already_running() -> bool {
     unsafe {
         let session_id = WindowsApi::current_session_id();
-        let mutex_name = format!("Local\\Seelen-UI-Service-Instance-{}", session_id);
+        let mutex_name = format!("Local\\{}-{}", slu_ipc::identity::SERVICE_MUTEX, session_id);
         let mutex_name_wide = WindowsString::from_str(&mutex_name);
 
         // Try to create a named mutex specific to the current session
@@ -150,9 +150,11 @@ async fn main() {
     let (tx, mut rx) = tokio::sync::mpsc::channel(1);
     EXIT_CHANNEL.set(tx).unwrap();
 
-    if let Err(err) = TaskSchedulerHelper::create_service_task() {
-        log::error!("Failed to create service task: {err:?}");
-        std::process::exit(1);
+    if !slu_ipc::identity::SUITE_BUILD {
+        if let Err(err) = TaskSchedulerHelper::create_service_task() {
+            log::error!("Failed to create service task: {err:?}");
+            std::process::exit(1);
+        }
     }
 
     let version = env!("CARGO_PKG_VERSION");

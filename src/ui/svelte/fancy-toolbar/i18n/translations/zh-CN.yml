@@ -1,3 +1,7 @@
+suite:
+  metric_details: 打开 Stats 详情
+  stats_unavailable: Stats 数据暂不可用，请检查 Stats 是否运行。
+  input_mode: 输入语言与中英文模式
 battery:
   remaining: 剩余 {{0}}%
   smart_charge: 智能充电
