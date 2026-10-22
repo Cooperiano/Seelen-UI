@@ -11,8 +11,9 @@ Use the `desktop-suite` feature and isolated suite config for this adaptation.
 Never commit settings, runtime logs, dumps, credentials, signing keys or local
 handoffs. Do not re-enable archived upstream publishing workflows as part of
 source iteration. Original Stats/shared sources are under `components/` (AGPL);
-third-party dependencies retain their own terms. Complete modified Touchpad and
-Activity Monitor sources are not bundled; do not claim a complete suite installer.
+third-party dependencies retain their own terms. Complete Touchpad/helper sources
+live in Cooperiano/ThreeFingerDragOnWindows (MIT), not this tree. Activity Monitor
+is not bundled; do not claim a signed, clean-machine-accepted complete suite installer.
 
 Seelen UI is a customizable Windows desktop environment built with:
 
