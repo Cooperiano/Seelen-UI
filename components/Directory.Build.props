@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RepositoryUrl>https://github.com/Cooperiano/Seelen-UI</RepositoryUrl>
+  </PropertyGroup>
+</Project>

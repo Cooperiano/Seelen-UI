@@ -12,7 +12,7 @@
 - **桌面生命周期**：统一组件启停、退出和当前用户自启动入口；Dock 常显/自动隐藏统一设置；原任务栏采用带心跳的隐藏与退出恢复机制。
 - **回归代码**：输入模式、数据契约、布局、排序、拖放、自动保存、生命周期与任务栏策略测试。
 
-本仓库公开的是 **Seelen 主程序改造和组件接入代码**。当前 Stats 收集器、修改版 Touchpad Control 与可选 Activity Monitor 仍是外部程序，**完整源码和安装包不包含在此次发布中**。缺少组件时相关能力不可用，不会产生另一套采集器或虚构指标。详见[来源与贡献](documentation/SOURCES-AND-CONTRIBUTIONS.md)、[架构与构建](documentation/desktop-suite-fork.md)。
+本仓库公开 **Seelen 主程序改造、Stats 1.0.5 收集器及共享协议源码、接入代码与测试**。Stats 自研部分采用 AGPL，见 [components](components/README.md)。修改版 Touchpad Control 与可选 Activity Monitor 的完整源码和安装包仍不包含在此次发布中。缺少组件时相关能力不可用，不会虚构指标。详见[来源与贡献](documentation/SOURCES-AND-CONTRIBUTIONS.md)、[架构与构建](documentation/desktop-suite-fork.md)。
 
 ## 来源与许可
 
@@ -35,4 +35,4 @@ Touchpad Control 源于 Clément Grennerat 的 [ThreeFingerDragOnWindows](https:
 
 Julian Cooper's experimental Windows desktop-suite adaptation of **Seelen UI 2.8.8**, not a shell built from scratch. It reuses the upstream toolbar, Dock, Quick Settings and window infrastructure, integrating optional Stats and Touchpad components through one settings and lifecycle surface. Julian leads product requirements, interaction direction, integration decisions and hands-on feedback; implementation is assisted by Codex.
 
-This publication contains the adapted **host, integration contracts and regression tests**, not complete external component sources or a signed installer. Upstream authorship, history and AGPL notices are retained. Apple/macOS is an interaction reference, not the source of private Apple code. See [provenance](documentation/SOURCES-AND-CONTRIBUTIONS.md), [build instructions](documentation/desktop-suite-fork.md) and [verification limits](documentation/VERIFICATION.md).
+This publication contains the adapted **host, Stats collector/shared protocol sources and regression tests**, not complete Touchpad/Activity Monitor sources or a signed installer. The owner chose AGPL for original Stats component code; third-party terms remain intact. Upstream authorship, history and AGPL notices are retained. Apple/macOS is an interaction reference, not the source of private Apple code. See [provenance](documentation/SOURCES-AND-CONTRIBUTIONS.md), [build instructions](documentation/desktop-suite-fork.md) and [verification limits](documentation/VERIFICATION.md).

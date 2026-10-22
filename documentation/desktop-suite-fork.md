@@ -23,9 +23,11 @@ area. Touchpad owns input and its Windows tracking backend; no second pointer
 multiplier is added here. Component preferences live in the main window, while
 Quick Settings and metric-detail popovers remain separate transient surfaces.
 
-External components are not bundled. Discovery/configuration is implemented in
+Stats source and shared libraries are in `components/`; see its separate .NET
+build and bounded contract checks. Touchpad/Activity Monitor sources are not bundled.
+Runtime component discovery/configuration is implemented in
 `desktop_suite/lifecycle.rs`. Central tracking needs compatible Touchpad 48 or newer;
-metrics need a compatible Stats publisher. A standalone checkout is not a complete
+metrics need a compatible Stats publisher built separately. A checkout is not a complete
 end-user suite installer. Do not fill missing components from unverified mirrors.
 
 Settings auto-save using revision-aware, bounded, atomic writes. Conflicts and

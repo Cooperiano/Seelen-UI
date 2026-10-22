@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Stats</AssemblyName>
+    <RootNamespace>MenuBar</RootNamespace>
+    <ApplicationIcon>Assets\Stats.ico</ApplicationIcon>
+    <Version>1.0.5</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Stats.Tests" />
+    <ProjectReference Include="..\Shared\HardwareTelemetry\HardwareTelemetry.csproj" />
+    <ProjectReference Include="..\Shared\Monitoring.Contracts\Monitoring.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Stats.ico" />
+  </ItemGroup>
+</Project>

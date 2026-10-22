@@ -36,3 +36,6 @@ GEMINI.md
 /tests/*.exe
 /tests/*.dll
 /tests/*/target/
+/components/**/bin/
+/components/**/obj/
+/components/**/publish*/
